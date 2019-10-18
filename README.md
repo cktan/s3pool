@@ -1,2 +1,1 @@
-# s3pool
-Simple S3 Cache
+# S3 Pool
