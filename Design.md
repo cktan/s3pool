@@ -1,5 +1,17 @@
 # S3POOL &mdash; a S3 cache on local disk
 
+## License
+
+    S3pool - S3 cache on local disk
+    Copyright (c) 2019 CK Tan
+    cktanx@gmail.com
+    
+    S3Pool can be used for free under the GNU General Public License
+    version 3 (where anything released into public must be open source) or
+    under a commercial license if such has been acquired (send email to
+    cktanx@gmail.com). The commercial license does not cover derived or
+    ported versions created by third parties under GPL.
+
 ## Usage
 
     s3pool -p port -D homedir
@@ -82,9 +94,15 @@ Push a file to S3.
 Syntax: ["PUSH", "bucket", "key", "absolute-path-to-file"]
 
 
-## Cache Replacement
+## Disk Monitor
 
-A watchdog is implemented to keep the disk utilization under
-90%. Whenever this high water mark is reached, the watchdog starts to
-delete files cached in the `data/` directory using some form of LRU
-algorithm based on access time.
+A watchdog keeps the disk utilization under 90%. Whenever this high
+water mark is reached, the watchdog starts to delete files cached in
+the `data/` directory using some form of LRU algorithm based on access
+time.
+
+## List Monitor
+
+A watchdog keeps the `__list__` file under each bucket up-to-date by
+refreshing it every 5 minutes.
+
