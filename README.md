@@ -10,11 +10,6 @@
     % echo '["PULL", "bucketname", "path/to/a/file/on/s3.txt"]' | nc localhost 9999
     % cat s3cache/data/bucketname/path/to/a/file/on/s3.txt
     
-## How to build
-
-    % export GOPATH=$(pwd)
-    % go get .
-    % go install
 
 ## Top Features
 
@@ -28,4 +23,10 @@ the last download.
 
 + Least-recently-used cache files will be deleted when disk space
 utilization is above 90%.
+
+## How to build
+
+    % export GOPATH=$(pwd)
+    % (cd src/s3pool && go get . && go install)
+    % ls bin/s3pool
 
