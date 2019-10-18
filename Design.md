@@ -1,4 +1,4 @@
-# S3POOL &mdash; a S3 cache on local disk
+# S3Pool &mdash; a S3 cache on local disk
 
 ## License
 
@@ -83,8 +83,8 @@ Otherwise, pull the file from S3.
 
 Syntax: ["PULL", "bucket-name", "key-name"]
 
-The reply is an absolute path in the local filesystem that the user can use to
-access the S3 object.
+The reply is an absolute path in the local filesystem that the user
+can use to access the S3 object.
 
 
 ### PUSH 
