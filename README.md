@@ -3,8 +3,8 @@
 ## Synopsis
 
     % ### create a dir to store cache files and start the service
-    % mkdir s3cache
-    % s3pool -p 9999 -D s3cache &
+    % mkdir mycache
+    % s3pool -p 9999 -D mycache &
 
     % ### download a file 
     % echo '["PULL", "bucketname", "path/to/a/file/on/s3.txt"]' | nc localhost 9999
