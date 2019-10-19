@@ -8,14 +8,16 @@
 
     % ### download a file 
     % echo '["PULL", "bucketname", "path/to/a/file/on/s3.txt"]' | nc localhost 9999
-    % cat s3cache/data/bucketname/path/to/a/file/on/s3.txt
+    OK
+    /abs/path/to/the/file/on/local/disk.txt
+    % cat /abs/path/to/the/file/on/local/disk.txt
     
 
 ## Top Features
 
 + All AWS operations are performed using the [AWS Command Line
 Interface](https://aws.amazon.com/cli/) program. This means
-authentication and authorization uses the credentials stored in
+authentication and authorization use the credentials stored in
 `~/.aws/` of the user.
 
 + PULL operation will download file only if it has been modified since
