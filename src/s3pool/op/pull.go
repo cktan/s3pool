@@ -53,8 +53,7 @@ func s3GetObject(bucket string, key string) (string, error) {
 	// Get destination path
 	path, err := mapToPath(bucket, key)
 	if err != nil {
-		err = errors.New(fmt.Sprintf("Cannot map bucket+key to path -- %v", err))
-		return "", err
+		return "", fmt.Errorf("Cannot map bucket+key to path -- %v", err)
 	}
 
 	// Get etag from meta file
@@ -64,7 +63,7 @@ func s3GetObject(bucket string, key string) (string, error) {
 	// Prepare to write to tmp file
 	tmppath, err := mktmpfile()
 	if err != nil {
-		err = errors.New(fmt.Sprintf("Cannot create temp file -- %v", err))
+		return "", fmt.Errorf("Cannot create temp file -- %v", err)
 		return "", err
 	}
 	defer os.Remove(tmppath)
@@ -86,8 +85,7 @@ func s3GetObject(bucket string, key string) (string, error) {
 		return path, nil
 	}
 	if err != nil {
-		err = errors.New(fmt.Sprintf("aws s3api get-object failed -- %v", err))
-		return "", err
+		return "", fmt.Errorf("aws s3api get-object failed -- %v", err)
 	}
 
 	// The file has been downloaded to tmppath. Now move it to the right place.

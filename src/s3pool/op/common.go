@@ -13,7 +13,6 @@
 package op
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -47,14 +46,12 @@ func moveFile(src, dst string) error {
 	if idx > 0 {
 		dirpath := dst[:idx]
 		if err := os.MkdirAll(dirpath, 0755); err != nil {
-			err = errors.New(fmt.Sprintf("Cannot mkdir %s -- %s", dirpath, err.Error()))
-			return err
+			return fmt.Errorf("Cannot mkdir %s -- %v", dirpath, err)
 		}
 	}
 
 	if err := os.Rename(src, dst); err != nil {
-		err = errors.New(fmt.Sprintf("Cannot mv file -- %s", err.Error()))
-		return err
+		return fmt.Errorf("Cannot mv file -- %v", err)
 	}
 
 	return nil

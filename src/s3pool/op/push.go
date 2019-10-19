@@ -29,8 +29,7 @@ func s3cp(src, dst string) error {
 	cmd.Stderr = &errbuf
 	err := cmd.Run()
 	if err != nil {
-		err = errors.New(fmt.Sprintf("aws cp failed -- %v", err))
-		return err
+		return fmt.Errorf("aws cp failed -- %v", err)
 	}
 	return nil
 }

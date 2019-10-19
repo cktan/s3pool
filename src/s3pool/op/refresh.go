@@ -31,16 +31,14 @@ func s3ListObjects(bucket string) error {
 	cmd.Stderr = &errbuf
 	err := cmd.Run()
 	if err != nil {
-		err = errors.New(fmt.Sprintf("aws s3api list-objects failed -- %s", err.Error()))
-		return err
+		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
 	}
 
 	list := strings.Split(string(outbuf.Bytes()), "\n")
 
 	fp, err := ioutil.TempFile("tmp", "s3l_")
 	if err != nil {
-		err = errors.New(fmt.Sprintf("Cannot create temp file -- %s", err.Error()))
-		return err
+		return fmt.Errorf("Cannot create temp file -- %v", err)
 	}
 	defer fp.Close()
 	defer os.Remove(fp.Name())
