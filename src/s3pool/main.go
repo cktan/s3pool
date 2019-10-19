@@ -19,10 +19,17 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"s3pool/op"
 	"s3pool/tcp_server"
 	"time"
 )
+
+func checkawscli() bool {
+	cmd := exec.Command("aws", "--version")
+	err := cmd.Run()
+	return err != nil
+}
 
 func watchlog() {
 
@@ -129,35 +136,44 @@ func serve(c *tcp_server.Client, request string) {
 	}
 }
 
-func parseArgs() {
+func parseArgs() error {
 	portPtr := flag.Int("p", 0, "port number")
 	dirPtr := flag.String("D", "", "home directory")
 	flag.Parse()
 
 	if len(flag.Args()) != 0 {
-		fmt.Fprintf(os.Stderr, "Extra arguments\n")
-		os.Exit(1)
+		return errors.New("Extra arguments")
 	}
 
 	Port = *portPtr
 	HomeDir = *dirPtr
 	if !(0 < Port && Port <= 65535) {
-		fmt.Fprintf(os.Stderr, "Missing or invalid port number\n")
-		os.Exit(1)
+		return errors.New("Missing or invalid port number")
 	}
 	if "" == HomeDir {
-		fmt.Fprintf(os.Stderr, "Missing or invalid home directory name\n")
-		os.Exit(1)
+		return errors.New("Missing or invalid home directory path")
 	}
+
+	return nil
+}
+
+func exit(msg string) {
+	fmt.Fprintln(os.Stderr, msg)
+	os.Exit(1)
 }
 
 func main() {
+	// make sure that the aws cli is installed
+	if !checkawscli() {
+		exit("Cannot launch 'aws' command. Please install aws cli.")
+	}
 
-	parseArgs()
+	if err := parseArgs(); err != nil {
+		exit(err.Error())
+	}
 
 	if err := os.Chdir(HomeDir); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
+		exit(err.Error())
 	}
 
 	// create the necessary directories
