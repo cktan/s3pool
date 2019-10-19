@@ -10,6 +10,8 @@
     % echo '["PULL", "bucketname", "path/to/a/file/on/s3.txt"]' | nc localhost 9999
     OK
     /abs/path/to/the/file/on/local/disk.txt
+
+    % ### read the file using the abspath returned by PULL
     % cat /abs/path/to/the/file/on/local/disk.txt
     
 
