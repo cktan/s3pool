@@ -12,45 +12,23 @@
 #include <unistd.h>
 #include "s3pool.h"
 
-struct s3pool_t {
-	int   port;
-	char  buf[1000];
-	char  errmsg[400];
-};
 
-
-s3pool_t* s3pool_connect(int port)
+static char* chat(int port, const char* request,
+				  char* errmsg, int errmsgsz)
 {
-	s3pool_t* handle = malloc(sizeof(*handle));
-	if (handle) {
-		handle->port = port;
-		handle->errmsg[0] = 0;
-	}
-	return handle;
-}
-
-
-void s3pool_close(s3pool_t* handle)
-{
-	free(handle);
-}
-
-
-const char* s3pool_errmsg(s3pool_t* handle)
-{
-	return handle->errmsg;
-}
-
-
-static char* chat(s3pool_t* handle, const char* request)
-{
-	int sockfd;
+	int sockfd = -1;
 	struct sockaddr_in servaddr;
+	const int replysz = 500;
+	char* reply = malloc(replysz);
+	if (!reply) {
+		snprintf(errmsg, errmsgsz, "out of memory");
+		goto bailout;
+	}
 
 	// socket create and varification
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "socket: %s", strerror(errno));
+		snprintf(errmsg, errmsgsz, "socket: %s", strerror(errno));
 		goto bailout;
 	}
 	memset(&servaddr, 0, sizeof(servaddr));
@@ -58,11 +36,11 @@ static char* chat(s3pool_t* handle, const char* request)
 	// assign IP, PORT
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	servaddr.sin_port = htons(handle->port);
+	servaddr.sin_port = htons(port);
 
 	// connect the client socket to server socket
 	if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "connect: %s", strerror(errno));
+		snprintf(errmsg, errmsgsz, "connect: %s", strerror(errno));
 		goto bailout;
 	}
 
@@ -74,7 +52,7 @@ static char* chat(s3pool_t* handle, const char* request)
 			if (n == -1) {
 				if (errno == EAGAIN) continue;
 				
-				snprintf(handle->errmsg, sizeof(handle->errmsg), "write: %s", strerror(errno));
+				snprintf(errmsg, errmsgsz, "write: %s", strerror(errno));
 				goto bailout;
 			}
 			
@@ -84,14 +62,14 @@ static char* chat(s3pool_t* handle, const char* request)
 
 
 	{
-		char* p = handle->buf;
-		char* q = p + sizeof(handle->buf);
+		char* p = reply;
+		char* q = p + replysz;
 		while (p < q) {
 			int n = read(sockfd, p, q-p);
 			if (n == -1) {
 				if (errno == EAGAIN) continue;
 
-				snprintf(handle->errmsg, sizeof(handle->errmsg), "read: %s", strerror(errno));
+				snprintf(errmsg, errmsgsz, "read: %s", strerror(errno));
 				goto bailout;
 			}
 			if (n == 0) break;
@@ -100,16 +78,17 @@ static char* chat(s3pool_t* handle, const char* request)
 		}
 
 		if (p == q) {
-			snprintf(handle->errmsg, sizeof(handle->errmsg), "read: reply message too big");
+			snprintf(errmsg, errmsgsz, "read: reply message too big");
 			goto bailout;
 		}
 	}
 
 	close(sockfd);
-	return handle->buf;
+	return reply;
 
 	bailout:
 	if (sockfd >= 0) close(sockfd);
+	if (reply) free(reply);
 	return 0;
 }
 
@@ -120,36 +99,37 @@ static char* chat(s3pool_t* handle, const char* request)
  *  PULL a file from S3 to local disk. Returns a unix file descriptor
  *  of the file that can be used to read the file or -1 on error.
  */
-int s3pool_pull(s3pool_t* handle, const char* bucket, const char* key)
+int s3pool_pull(int port, const char* bucket, const char* key,
+				char* errmsg, int errmsgsz)
 {
 	char* request = 0;
 	char* reply = 0;
 	int fd = -1;
 
 	if (strchr(bucket, '\"') || strchr(key, '\"')) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "DQUOTE char in bucket or key");
+		snprintf(errmsg, errmsgsz, "DQUOTE char in bucket or key");
 		goto bailout;
 	}
 
 	request = malloc(strlen(bucket) + strlen(key) + 20);
 	if (!request) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "out of memory");
+		snprintf(errmsg, errmsgsz, "out of memory");
 		goto bailout;
 	}
 	
 	sprintf(request, "[\"PULL\", \"%s\", \"%s\"]\n", bucket, key);
-	reply = chat(handle, request);
+	reply = chat(port, request, errmsg, errmsgsz);
 	if (! reply) {
 		goto bailout;
 	}
 
 	if (strncmp(reply, "ERROR\n", 6) == 0) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "%s", reply + 6);
+		snprintf(errmsg, errmsgsz, "%s", reply + 6);
 		goto bailout;
 	}
 
 	if (strncmp(reply, "OK\n", 3) != 0) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "bad message from server");
+		snprintf(errmsg, errmsgsz, "bad message from server");
 		goto bailout;
 	}
 
@@ -159,16 +139,18 @@ int s3pool_pull(s3pool_t* handle, const char* bucket, const char* key)
 
 	fd = open(fname, O_RDONLY);
 	if (fd == -1) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "open: %s", strerror(errno));
+		snprintf(errmsg, errmsgsz, "open: %s", strerror(errno));
 		goto bailout;
 	}
 
 	free(request);
+	free(reply);
 	return fd;
 
 	bailout:
 	if (fd != -1) close(fd);
 	if (request) free(request);
+	if (reply) free(reply);
 	return -1;
 }
 
@@ -178,43 +160,46 @@ int s3pool_pull(s3pool_t* handle, const char* bucket, const char* key)
 /**
  *  PUSH a file from local disk to S3. Returns 0 on success, -1 otherwise.
  */
-int s3pool_push(s3pool_t* handle, const char* bucket, const char* key, const char* fpath)
+int s3pool_push(int port, const char* bucket, const char* key, const char* fpath,
+				char* errmsg, int errmsgsz)
 {
 	char* request = 0;
 	char* reply = 0;
 
 	if (strchr(bucket, '\"') || strchr(key, '\"') || strchr(fpath, '\"')) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "DQUOTE char in bucket, key or fpath");
+		snprintf(errmsg, errmsgsz, "DQUOTE char in bucket, key or fpath");
 		goto bailout;
 	}
 
 	request = malloc(strlen(bucket) + strlen(key) + strlen(fpath) + 20);
 	if (!request) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "out of memory");
+		snprintf(errmsg, errmsgsz, "out of memory");
 		goto bailout;
 	}
 	
 	sprintf(request, "[\"PUSH\", \"%s\", \"%s\", \"%s\"]\n", bucket, key, fpath);
-	reply = chat(handle, request);
+	reply = chat(port, request, errmsg, errmsgsz);
 	if (! reply) {
 		goto bailout;
 	}
 
 	if (strncmp(reply, "ERROR\n", 6) == 0) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "%s", reply + 6);
+		snprintf(errmsg, errmsgsz, "%s", reply + 6);
 		goto bailout;
 	}
 
 	if (strncmp(reply, "OK\n", 3) != 0) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "bad message from server");
+		snprintf(errmsg, errmsgsz, "bad message from server");
 		goto bailout;
 	}
 
 	free(request);
+	free(reply);
 	return 0;
 
 	bailout:
 	if (request) free(request);
+	if (reply) free(reply);
 	return -1;
 }
 
@@ -222,42 +207,45 @@ int s3pool_push(s3pool_t* handle, const char* bucket, const char* key, const cha
 /**
  *  REFRESH a bucket list. Returns 0 on success, -1 otherwise.
  */
-int s3pool_refresh(s3pool_t* handle, const char* bucket)
+int s3pool_refresh(int port, const char* bucket,
+				   char* errmsg, int errmsgsz)
 {
 	char* request = 0;
 	char* reply = 0;
 
 	if (strchr(bucket, '\"')) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "DQUOTE char in bucket");
+		snprintf(errmsg, errmsgsz, "DQUOTE char in bucket");
 		goto bailout;
 	}
 
 	request = malloc(strlen(bucket) + 20);
 	if (!request) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "out of memory");
+		snprintf(errmsg, errmsgsz, "out of memory");
 		goto bailout;
 	}
 	
 	sprintf(request, "[\"REFRESH\", \"%s\"]\n", bucket);
-	reply = chat(handle, request);
+	reply = chat(port, request, errmsg, errmsgsz);
 	if (! reply) {
 		goto bailout;
 	}
 
 	if (strncmp(reply, "ERROR\n", 6) == 0) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "%s", reply + 6);
+		snprintf(errmsg, errmsgsz, "%s", reply + 6);
 		goto bailout;
 	}
 
 	if (strncmp(reply, "OK\n", 3) != 0) {
-		snprintf(handle->errmsg, sizeof(handle->errmsg), "bad message from server");
+		snprintf(errmsg, errmsgsz, "bad message from server");
 		goto bailout;
 	}
 
 	free(request);
+	free(reply);
 	return 0;
 
 	bailout:
 	if (request) free(request);
+	if (reply) free(reply);
 	return -1;
 }

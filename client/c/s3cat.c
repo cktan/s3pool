@@ -28,6 +28,7 @@ void fatal(const char* msg)
 
 void doit(int port, char* bktkey_)
 {
+	char errmsg[200];
 	char* bktkey = strdup(bktkey_);
 	if (!bktkey) {
 		fatal("out of memory");
@@ -42,14 +43,10 @@ void doit(int port, char* bktkey_)
 	char* bucket = bktkey;
 	char* key = colon+1;
 
-	s3pool_t* handle = s3pool_connect(port);
-	if (!handle) {
-		fatal(s3pool_errmsg(handle));
-	}
-
-	int fd = s3pool_pull(handle, bucket, key);
+	int fd = s3pool_pull(port, bucket, key,
+						 errmsg, sizeof(errmsg));
 	if (-1 == fd) {
-		fatal(s3pool_errmsg(handle));
+		fatal(errmsg);
 	}
 
 	while (1) {
@@ -68,7 +65,6 @@ void doit(int port, char* bktkey_)
 	}
 
 	close(fd);
-	s3pool_close(handle);
 	free(bktkey);
 	
 }
