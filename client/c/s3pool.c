@@ -18,12 +18,8 @@ static char* chat(int port, const char* request,
 {
 	int sockfd = -1;
 	struct sockaddr_in servaddr;
-	const int replysz = 500;
-	char* reply = malloc(replysz);
-	if (!reply) {
-		snprintf(errmsg, errmsgsz, "out of memory");
-		goto bailout;
-	}
+	int replysz = 0;
+	char* reply = 0;
 
 	// socket create and varification
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -61,26 +57,33 @@ static char* chat(int port, const char* request,
 	}
 
 
-	{
-		char* p = reply;
-		char* q = p + replysz;
-		while (p < q) {
-			int n = read(sockfd, p, q-p);
-			if (n == -1) {
-				if (errno == EAGAIN) continue;
-
-				snprintf(errmsg, errmsgsz, "read: %s", strerror(errno));
+	char* p = reply;
+	char* q = p + replysz;
+	while (p < q) {
+		if (p == q) {
+			int newsz = replysz * 1.5;
+			if (newsz == 0) newsz = 1024;
+			char* t = realloc(reply, newsz);
+			if (!t) {
+				snprintf(errmsg, errmsgsz, "read: reply message too big -- out of memory");
 				goto bailout;
 			}
-			if (n == 0) break;
-
-			p += n;
+			p = t + replysz;
+			q = t + newsz;
+			reply = t;
+			replysz = newsz;
 		}
 
-		if (p == q) {
-			snprintf(errmsg, errmsgsz, "read: reply message too big");
+		int n = read(sockfd, p, q-p);
+		if (n == -1) {
+			if (errno == EAGAIN) continue;
+
+			snprintf(errmsg, errmsgsz, "read: %s", strerror(errno));
 			goto bailout;
 		}
+		if (n == 0) break;
+
+		p += n;
 	}
 
 	close(sockfd);
@@ -116,31 +119,42 @@ int s3pool_pull(int port, const char* bucket, const char* key,
 		snprintf(errmsg, errmsgsz, "out of memory");
 		goto bailout;
 	}
-	
-	sprintf(request, "[\"PULL\", \"%s\", \"%s\"]\n", bucket, key);
-	reply = chat(port, request, errmsg, errmsgsz);
-	if (! reply) {
-		goto bailout;
-	}
 
-	if (strncmp(reply, "ERROR\n", 6) == 0) {
-		snprintf(errmsg, errmsgsz, "%s", reply + 6);
-		goto bailout;
-	}
+	while (1) {
+		sprintf(request, "[\"PULL\", \"%s\", \"%s\"]\n", bucket, key);
+		reply = chat(port, request, errmsg, errmsgsz);
+		if (! reply) {
+			goto bailout;
+		}
+		
+		if (strncmp(reply, "ERROR\n", 6) == 0) {
+			snprintf(errmsg, errmsgsz, "%s", reply + 6);
+			goto bailout;
+		}
+		
+		if (strncmp(reply, "OK\n", 3) != 0) {
+			snprintf(errmsg, errmsgsz, "bad message from server");
+			goto bailout;
+		}
+		
+		char* fname = reply + 3;
+		char* endp = strchr(fname, '\n');
+		if (endp) *endp = 0;
+		
+		fd = open(fname, O_RDONLY);
+		if (fd == -1) {
+			/* special case to handle race: file may be deleted 
+			 * by others right after we pulled. In this case,
+			 * just pull again.
+			 */
+			if (errno == ENOENT) {
+				continue;
+			}
+			snprintf(errmsg, errmsgsz, "open: %s", strerror(errno));
+			goto bailout;
+		}
 
-	if (strncmp(reply, "OK\n", 3) != 0) {
-		snprintf(errmsg, errmsgsz, "bad message from server");
-		goto bailout;
-	}
-
-	char* fname = reply + 3;
-	char* endp = strchr(fname, '\n');
-	if (endp) *endp = 0;
-
-	fd = open(fname, O_RDONLY);
-	if (fd == -1) {
-		snprintf(errmsg, errmsgsz, "open: %s", strerror(errno));
-		goto bailout;
+		break;
 	}
 
 	free(request);
