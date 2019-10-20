@@ -28,7 +28,7 @@ import (
 func checkawscli() bool {
 	cmd := exec.Command("aws", "--version")
 	err := cmd.Run()
-	return err != nil
+	return err == nil
 }
 
 func watchlog() {
