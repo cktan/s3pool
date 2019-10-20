@@ -121,6 +121,11 @@ func serve(c *tcp_server.Client, request string) {
 		if err != nil {
 			notifyBucket <- args[1]
 		}
+	case "GLOB":
+		reply, err = op.Glob(args[1:])
+		if err != nil {
+			notifyBucket <- args[1]
+		}
 	case "REFRESH":
 		reply, err = op.Refresh(args[1:])
 		if err != nil {

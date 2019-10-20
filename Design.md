@@ -68,6 +68,12 @@ either OK or ERROR. In the case of OK, the content is defined by the
 command submitted. In the case of ERROR, the content is an error
 message pertinent to the error.
 
+### GLOB
+
+Returns a list of keys matching a glob pattern.
+
+SYNTAX: ["GLOB", "bucket", "pattern"]
+
 
 ### REFRESH
 

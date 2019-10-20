@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <unistd.h>
+#include <assert.h>
 #include "s3pool.h"
 
 
@@ -58,8 +59,8 @@ static char* chat(int port, const char* request,
 
 
 	char* p = reply;
-	char* q = p + replysz;
-	while (p < q) {
+	char* q = reply + replysz;
+	while (1) {
 		if (p == q) {
 			int newsz = replysz * 1.5;
 			if (newsz == 0) newsz = 1024;
@@ -74,6 +75,7 @@ static char* chat(int port, const char* request,
 			replysz = newsz;
 		}
 
+		assert(q > p);
 		int n = read(sockfd, p, q-p);
 		if (n == -1) {
 			if (errno == EAGAIN) continue;

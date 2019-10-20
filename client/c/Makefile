@@ -1,7 +1,7 @@
 CFILES = s3pool.c
 OBJS = $(CFILES:.c=.o)
 EXECS = s3cat
-LIB = libs3pool.a
+LIBS = libs3pool.a
 
 
 # to compile for debug: make DEBUG=1
@@ -15,7 +15,7 @@ endif
 CFLAGS += -std=c99 -Wall -Wextra
 
 .PHONY: all
-all: $(LIB) $(EXECS)
+all: $(LIBS) $(EXECS)
 
 
 libs3pool.a: $(OBJS)
@@ -24,10 +24,9 @@ libs3pool.a: $(OBJS)
 s3pool.o: s3pool.c 
 
 
-s3cat: s3cat.c $(LIB)
-	$(CC) -o $@ $^ -L. -ls3pool
+s3cat: s3cat.c $(LIBS)
 
 
 .PHONY: clean
 clean:
-	rm -f $(OBJS) $(EXECS) $(LIB)
+	rm -f $(OBJS) $(EXECS) $(LIBS)

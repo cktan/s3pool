@@ -45,16 +45,14 @@ func s3ListObjects(bucket string) error {
 
 	for _, s := range list {
 		nv := strings.SplitN(strings.Trim(s, " \t"), ":", 2)
-		if len(nv) == 1 {
+		if len(nv) != 2 {
 			continue
 		}
-		for i := range nv {
-			nv[i] = strings.Trim(nv[i], " \t\"")
-		}
-		name, value := nv[0], nv[1]
+		name := strings.Trim(nv[0], " \t\"")
 		if name != "Key" {
 			continue
 		}
+		value := strings.Trim(nv[1], " \t\"")
 		if len(value) >= 1 && value[len(value)-1] == '/' {
 			continue
 		}
