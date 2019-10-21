@@ -45,7 +45,7 @@ func s3ListObjects(bucket string) error {
 		fmt.Println("list", s)
 		// Parse s of the form 
 		//       "Key" : "key value"
-		nv := strings.SplitN(strings.Trim(s, " \t"), ":", 2)
+		nv := strings.SplitN(s, ":", 2)
 		if len(nv) != 2 {
 			continue
 		}
