@@ -13,7 +13,7 @@
 package op
 
 import (
-	"bytes"
+	"bufio"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -26,15 +26,11 @@ func s3ListObjects(bucket string) error {
 	cmd := exec.Command("aws", "s3api", "list-objects",
 		"--bucket", bucket,
 		"--query", "Contents[].{Key: Key}")
-	var outbuf, errbuf bytes.Buffer
-	cmd.Stdout = &outbuf
-	cmd.Stderr = &errbuf
-	err := cmd.Run()
-	if err != nil {
+	pipe, _ := cmd.StdoutPipe()
+	err := cmd.Start()
+ 	if err != nil {
 		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
 	}
-
-	list := strings.Split(string(outbuf.Bytes()), "\n")
 
 	fp, err := ioutil.TempFile("tmp", "s3l_")
 	if err != nil {
@@ -43,7 +39,10 @@ func s3ListObjects(bucket string) error {
 	defer fp.Close()
 	defer os.Remove(fp.Name())
 
-	for _, s := range list {
+	scanner := bufio.NewScanner(pipe)
+	for scanner.Scan() {
+		s := scanner.Text()
+		fmt.Println("list", s)
 		// Parse s of the form 
 		//       "Key" : "key value"
 		nv := strings.SplitN(strings.Trim(s, " \t"), ":", 2)
@@ -63,7 +62,15 @@ func s3ListObjects(bucket string) error {
 		fp.WriteString(value)
 		fp.WriteString("\n")
 	}
+	if err = scanner.Err(); err != nil {
+		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
+	}
+
 	fp.Close()
+
+	if err = cmd.Wait(); err != nil {
+		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
+	}
 
 	if err = moveFile(fp.Name(), fmt.Sprintf("data/%s/__list__", bucket)); err != nil {
 		return err
