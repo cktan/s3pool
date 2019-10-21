@@ -34,7 +34,6 @@ func Glob(args []string) (reply string, err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println("pattern", pattern)
 	
 	file, err := os.Open(fmt.Sprintf("data/%s/__list__", bucket))
 	if err != nil {
@@ -47,7 +46,6 @@ func Glob(args []string) (reply string, err error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		matched := g.Match(line)
-		fmt.Println(line, matched)
 		if matched {
 			replyBuilder.WriteString(line)
 			replyBuilder.WriteString("\n")

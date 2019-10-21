@@ -22,9 +22,9 @@ import (
 	"time"
 )
 
-// What we used only
+// Only count utilization under data directory
 func diskUsageOfSubdirs() int64 {
-	cmd := exec.Command("du", "-s", ".", "-B", "1048576")
+	cmd := exec.Command("du", "-s", "data", "-B", "1048576")
 	out, err := cmd.Output()
 	if err != nil {
 		log.Fatal(err)
@@ -64,15 +64,14 @@ func deleteSomeFiles() {
 
 	// delete those files
 	for _, line := range lines {
-		line = strings.Trim(line, " \r\n")
-		parts := strings.Fields(line)
-		if len(parts) < 3 {
-			continue
-		}
-		fname := parts[2]
-		err = os.Remove(fname)
-		if err != nil {
-			log.Fatal(err)
+		for ii, vv := range strings.Fields(line) {
+			if ii >= 2 {
+				err = os.Remove(vv)
+				if err != nil {
+					log.Fatal(err)
+				}
+				break;
+			}
 		}
 	}
 }

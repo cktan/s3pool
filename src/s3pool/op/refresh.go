@@ -44,6 +44,8 @@ func s3ListObjects(bucket string) error {
 	defer os.Remove(fp.Name())
 
 	for _, s := range list {
+		// Parse s of the form 
+		//       "Key" : "key value"
 		nv := strings.SplitN(strings.Trim(s, " \t"), ":", 2)
 		if len(nv) != 2 {
 			continue
@@ -53,6 +55,8 @@ func s3ListObjects(bucket string) error {
 			continue
 		}
 		value := strings.Trim(nv[1], " \t\"")
+
+		// ignore value that looks like a DIR (ending with / )
 		if len(value) >= 1 && value[len(value)-1] == '/' {
 			continue
 		}
