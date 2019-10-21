@@ -23,15 +23,8 @@ import (
 )
 
 func s3ListObjects(bucket string) error {
-	cmd := exec.Command("aws", "s3api", "list-objects",
-		"--bucket", bucket,
-		"--query", "Contents[].{Key: Key}")
-	pipe, _ := cmd.StdoutPipe()
-	err := cmd.Start()
- 	if err != nil {
-		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
-	}
 
+	// write to a temp file and then move it into bucket/__list__
 	fp, err := ioutil.TempFile("tmp", "s3l_")
 	if err != nil {
 		return fmt.Errorf("Cannot create temp file -- %v", err)
@@ -39,6 +32,17 @@ func s3ListObjects(bucket string) error {
 	defer fp.Close()
 	defer os.Remove(fp.Name())
 
+	// invoke s3api to list objects
+	cmd := exec.Command("aws", "s3api", "list-objects-v2",
+		"--bucket", bucket,
+		"--query", "Contents[].{Key: Key}")
+
+	pipe, _ := cmd.StdoutPipe()
+	if err = cmd.Start(); err != nil {
+		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
+	}
+
+	// read stdout of cmd 
 	scanner := bufio.NewScanner(pipe)
 	for scanner.Scan() {
 		s := scanner.Text()
@@ -54,9 +58,8 @@ func s3ListObjects(bucket string) error {
 			continue
 		}
 		value := strings.Trim(nv[1], " \t\"")
-
-		// ignore value that looks like a DIR (ending with / )
-		if len(value) >= 1 && value[len(value)-1] == '/' {
+		// ignore empty value or value that looks like a DIR (ending with / )
+		if len(value) == 0 || value[len(value)-1] == '/' {
 			continue
 		}
 		fp.WriteString(value)
@@ -66,12 +69,15 @@ func s3ListObjects(bucket string) error {
 		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
 	}
 
+	// done writing to temp file
 	fp.Close()
 
+	// clean up 
 	if err = cmd.Wait(); err != nil {
 		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
 	}
 
+	// move the temp file to data/bucket/__list__
 	if err = moveFile(fp.Name(), fmt.Sprintf("data/%s/__list__", bucket)); err != nil {
 		return err
 	}
