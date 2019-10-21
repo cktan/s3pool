@@ -30,9 +30,7 @@ func Glob(args []string) (reply string, err error) {
 	}
 	bucket, pattern := args[0], args[1]
 
-	var sep []rune
-	sep = append(sep, '/')
-	g, err := glob.Compile(pattern, sep...)
+	g, err := glob.Compile(pattern, '/')
 	if err != nil {
 		return
 	}
