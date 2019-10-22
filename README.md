@@ -30,6 +30,6 @@ utilization is above 90%.
 
 ## How to build
 
-    % make install
+    % make 
     % ls bin/s3pool
 
