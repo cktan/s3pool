@@ -34,14 +34,16 @@ func s3cp(src, dst string) error {
 	return nil
 }
 
-func Push(args []string) (reply string, err error) {
+func Push(args []string) (string, error) {
 	if len(args) != 3 {
-		err = errors.New("Expected 3 arguments for PUSH")
-		return
+		return "", errors.New("Expected 3 arguments for PUSH")
 	}
 	bucket, key, path := args[0], args[1], args[2]
 
 	url := fmt.Sprintf("s3://%s/%s", url.PathEscape(bucket), url.PathEscape(key))
-	err = s3cp(path, url)
-	return
+	if err := s3cp(path, url); err != nil {
+		return "", err
+	}
+
+	return "\n", nil
 }

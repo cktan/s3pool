@@ -23,28 +23,28 @@ import (
 
 
 
-func Glob(args []string) (reply string, err error) {
+func Glob(args []string) (string, error) {
 	if len(args) != 2 {
-		err = errors.New("expects 2 arguments for GLOB")
-		return
+		return "", errors.New("expects 2 arguments for GLOB")
 	}
 	bucket, pattern := args[0], args[1]
 
 	g, err := glob.Compile(pattern, '/')
 	if err != nil {
-		return
+		return "", err
 	}
 	
 	// Open the file. Retry after s3ListObjects() if it does not exist.
 	file, err := os.Open(fmt.Sprintf("data/%s/__list__", bucket))
-	if os.IsNotExist(err) {
-		if err = s3ListObjects(bucket); err != nil {
-			return
+	if (err != nil) {
+		if os.IsNotExist(err) {
+			if err = s3ListObjects(bucket); err == nil {
+				file, err = os.Open(fmt.Sprintf("data/%s/__list__", bucket))
+			}
 		}
-		file, err = os.Open(fmt.Sprintf("data/%s/__list__", bucket))
-	}
-	if err != nil {
-		return
+		if (err != nil) {
+			return "", err
+		}
 	}
 	defer file.Close()
 
@@ -57,14 +57,12 @@ func Glob(args []string) (reply string, err error) {
 		if matched {
 			replyBuilder.WriteString(line)
 			replyBuilder.WriteString("\n")
-			fmt.Println(line)
 		}
 	}
 
 	if err = scanner.Err(); err != nil {
-		return
+		return "", err
 	}
 
-	reply = replyBuilder.String()
-	return
+	return replyBuilder.String(), nil
 }

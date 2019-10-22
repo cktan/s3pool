@@ -36,7 +36,7 @@ void doit(int port, const char* bucket, const char* pattern)
 	if (! list) {
 		fatal(errmsg);
 	}
-	puts(list);
+	printf("%s", list);
 }
 
 

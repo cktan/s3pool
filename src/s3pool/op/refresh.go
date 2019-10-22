@@ -85,17 +85,15 @@ func s3ListObjects(bucket string) error {
 	return nil
 }
 
-func Refresh(args []string) (reply string, err error) {
+func Refresh(args []string) (string, error) {
 	if len(args) != 1 {
-		err = errors.New("expects 1 argument for REFRESH")
-		return
+		return "", errors.New("expects 1 argument for REFRESH")
 	}
 	bucket := args[0]
 
-	err = s3ListObjects(bucket)
-	if err != nil {
-		return
+	if err := s3ListObjects(bucket); err != nil {
+		return "", err
 	}
 
-	return
+	return "\n", nil
 }

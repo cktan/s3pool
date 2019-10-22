@@ -100,18 +100,16 @@ func s3GetObject(bucket string, key string) (string, error) {
 	return path, nil
 }
 
-func Pull(args []string) (reply string, err error) {
+func Pull(args []string) (string, error) {
 	if len(args) != 2 {
-		err = errors.New("Expected 2 arguments for PULL")
-		return
+		return "", errors.New("Expected 2 arguments for PULL")
 	}
 	bucket, key := args[0], args[1]
 
 	path, err := s3GetObject(bucket, key)
 	if err != nil {
-		return
+		return "", err
 	}
 
-	reply = path
-	return
+	return path + "\n", nil
 }
