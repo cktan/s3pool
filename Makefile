@@ -1,12 +1,21 @@
+
 all:
 	$(MAKE) -C src/s3pool all
 	$(MAKE) -C client/c all
 
-install: 
-	$(MAKE) -C src/s3pool install
-	$(MAKE) -C client/c install
+prefix ?= /usr/local
+
+install: all
+	install -d ${prefix}/include ${prefix}/lib ${prefix}/bin
+	install src/s3pool/s3pool ${prefix}/bin
+	install client/c/s3pool.h ${prefix}/include
+	install client/c/libs3pool.a ${prefix}/lib
+	install client/c/s3glob ${prefix}/bin
+	install client/c/s3cat ${prefix}/bin
 
 clean:
 	$(MAKE) -C src/s3pool clean
 	$(MAKE) -C client/c clean
 
+
+.PHONY: all install clean

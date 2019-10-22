@@ -30,7 +30,6 @@ utilization is above 90%.
 
 ## How to build
 
-    % export GOPATH=$(pwd)
-    % (cd src/s3pool && go get . && go install)
+    % make install
     % ls bin/s3pool
 

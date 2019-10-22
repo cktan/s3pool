@@ -1,9 +1,11 @@
-all:
-	GOPATH=`pwd`/../.. go get .
-	GOPATH=`pwd`/../.. go build .
+GOPATH=`pwd`/../..
 
-install: all
-	GOPATH=`pwd`/../.. go install .
+all:
+	GOPATH=$(GOPATH) go get .
+	GOPATH=$(GOPATH) go build .
 
 clean:
-	GOPATH=`pwd`/../.. go clean
+	GOPATH=$(GOPATH) go clean .
+
+
+.PHONY: all install clean

@@ -14,7 +14,6 @@ endif
 
 CFLAGS += -std=c99 -Wall -Wextra
 
-.PHONY: all
 all: $(LIBS) $(EXECS)
 
 
@@ -23,12 +22,13 @@ libs3pool.a: $(OBJS)
 
 s3pool.o: s3pool.c 
 
-
 s3cat: s3cat.c $(LIBS)
 
 s3glob: s3glob.c $(LIBS)
 
 
-.PHONY: clean
 clean:
 	rm -f $(OBJS) $(EXECS) $(LIBS)
+
+
+.PHONY: all install clean
