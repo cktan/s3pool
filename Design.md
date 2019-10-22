@@ -62,11 +62,11 @@ needs to be downloaded from S3.
 
 ## Commands
 
-Requests are submitted as JSON array objects that are single-line in form.
-Replies consist of a status line followed by payload.  Status line is
-either OK or ERROR. In the case of OK, the content is defined by the
-command submitted. In the case of ERROR, the content is an error
-message pertinent to the error.
+Requests are submitted as JSON array objects that are single-line in
+form.  Replies consist of a status line followed by payload.  Status
+line is either OK or ERROR. In the case of OK, the content is defined by
+the command submitted. In the case of ERROR, the content is a pertinent
+error message.
 
 ### GLOB
 

@@ -1,6 +1,6 @@
 CFILES = s3pool.c
 OBJS = $(CFILES:.c=.o)
-EXECS = s3cat
+EXECS = s3cat s3glob
 LIBS = libs3pool.a
 
 
@@ -25,6 +25,8 @@ s3pool.o: s3pool.c
 
 
 s3cat: s3cat.c $(LIBS)
+
+s3glob: s3glob.c $(LIBS)
 
 
 .PHONY: clean

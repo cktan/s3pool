@@ -78,7 +78,6 @@ func checkdirs() {
 
 func sendReply(c *tcp_server.Client, status, reply, request string, elapsed int) {
 	c.Send(status)
-	c.Send("\n")
 	c.Send(reply)
 	// check if we need to add a final \n 
 	L := len(reply)
@@ -100,9 +99,9 @@ func serve(c *tcp_server.Client, request string) {
 		endTime := time.Now()
 		elapsed := int(endTime.Sub(startTime) / 1000)
 		if err != nil {
-			sendReply(c, "ERROR", err.Error(), request, elapsed)
+			sendReply(c, "ERROR\n", err.Error(), request, elapsed)
 		} else {
-			sendReply(c, "OK", reply, request, elapsed)
+			sendReply(c, "OK\n", reply, request, elapsed)
 		}
 	}()
 

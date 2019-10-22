@@ -10,11 +10,17 @@
 typedef struct s3pool_t s3pool_t;
 
 /**
- *  PULL a file from S3 to local disk. Returns a unix file descriptor
- *  of the file that can be used to read the file or -1 on error.
+
+   PULL a file from S3 to local disk. 
+ 
+   On success, return the path to the file pulled down from S3. Caller
+   must free() the pointer returned. 
+ 
+   On failure, return a NULL ptr.
+
  */
-EXTERN int s3pool_pull(int port, const char* bucket, const char* key,
-					   char* errmsg, int errmsgsz);
+EXTERN char* s3pool_pull(int port, const char* bucket, const char* key,
+						 char* errmsg, int errmsgsz);
 
 
 /**
@@ -22,6 +28,21 @@ EXTERN int s3pool_pull(int port, const char* bucket, const char* key,
  */
 EXTERN int s3pool_push(int port, const char* bucket, const char* key, const char* fpath,
 					   char* errmsg, int errmsgsz);
+
+
+/**
+
+   GLOB file names in a bucket. 
+ 
+   On success, return a buffer containing strings terminated by
+   NEWLINE. Each string is a path name in the S3 bucket that matched
+   pattern. Caller must free() the buffer returned.
+ 
+   On failure, return a NULL ptr.
+
+*/
+EXTERN char* s3pool_glob(int port, const char* bucket, const char* pattern,
+						 char* errmsg, int errmsgsz);
 
 /**
  *  REFRESH a bucket list. Returns 0 on success, -1 otherwise.

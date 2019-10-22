@@ -44,28 +44,34 @@ void doit(int port, char* bktkey_)
 	char* bucket = bktkey;
 	char* key = colon+1;
 
-	int fd = s3pool_pull(port, bucket, key,
-						 errmsg, sizeof(errmsg));
-	if (-1 == fd) {
+	char* fname = s3pool_pull(port, bucket, key,
+							  errmsg, sizeof(errmsg));
+	if (!fname) {
 		fatal(errmsg);
+	}
+
+	FILE* fp = fopen(fname, "r");
+	if (!fp) {
+		perror("fopen");
+		exit(1);
 	}
 
 	while (1) {
 		char buf[100];
-		int n = read(fd, buf, sizeof(buf));
-		if (n == 0) break;
-		if (n == -1) {
-			perror("read");
+		int n = fread(buf, 1, sizeof(buf), fp);
+		if (ferror(fp)) {
+			perror("fread");
 			exit(1);
 		}
-
-		if (1 != fwrite(buf, n, 1, stdout)) {
+		if (n != (int) fwrite(buf, 1, n, stdout)) {
 			perror("fwrite");
 			exit(1);
 		}
+		if (feof(fp)) break;
 	}
 
-	close(fd);
+
+	fclose(fp);
 	free(bktkey);
 	
 }

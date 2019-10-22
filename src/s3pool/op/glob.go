@@ -35,12 +35,20 @@ func Glob(args []string) (reply string, err error) {
 		return
 	}
 	
+	// Open the file. Retry after s3ListObjects() if it does not exist.
 	file, err := os.Open(fmt.Sprintf("data/%s/__list__", bucket))
+	if os.IsNotExist(err) {
+		if err = s3ListObjects(bucket); err != nil {
+			return
+		}
+		file, err = os.Open(fmt.Sprintf("data/%s/__list__", bucket))
+	}
 	if err != nil {
 		return
 	}
 	defer file.Close()
 
+	// Match the pattern against content of the __list__ file
 	var replyBuilder strings.Builder
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -49,6 +57,7 @@ func Glob(args []string) (reply string, err error) {
 		if matched {
 			replyBuilder.WriteString(line)
 			replyBuilder.WriteString("\n")
+			fmt.Println(line)
 		}
 	}
 
