@@ -7,8 +7,6 @@
 #define EXTERN extern
 #endif
 
-typedef struct s3pool_t s3pool_t;
-
 /**
 
    PULL a file from S3 to local disk. 
