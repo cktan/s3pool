@@ -19,6 +19,8 @@ import (
 	"net"
 	"strings"
 	"time"
+	"os/signal"
+	"syscall"
 )
 
 // Client holds info about connection
@@ -37,26 +39,13 @@ type server struct {
 // Read client data from channel
 func (c *Client) accepted() {
 	defer c.conn.Close()
-
-	// use channel to read a request
-	ch := make(chan string, 1)
-	go func() {
-		reader := bufio.NewReader(c.conn)
-		req, _ := reader.ReadString('\n')
-		req = strings.Trim(req, " \n\t\r")
-		ch <- req
-	}()
-
-	// either get a line or a timeout
-	select {
-	case req := <-ch:
-		// ignore empty request
-		if req != "" {
-			c.Server.callback(c, req)
-		}
-
-	case <-time.After(1 * time.Second):
-		// do nothing; conn will be closed on return.
+	c.conn.SetReadDeadline(time.Now().Add(time.Second))
+	reader := bufio.NewReader(c.conn)
+	req, _ := reader.ReadString('\n')
+	req = strings.Trim(req, " \n\t\r")
+	// ignore empty request
+	if req != "" {
+		c.Server.callback(c, req)
 	}
 }
 
@@ -78,6 +67,9 @@ func (c *Client) Close() error {
 
 // Listen and serve
 func (s *server) Loop() error {
+	// ignore sigpipe
+	signal.Ignore(syscall.SIGPIPE)
+	
 	var listener net.Listener
 	var err error
 	if s.config == nil {
@@ -92,6 +84,7 @@ func (s *server) Loop() error {
 
 	for {
 		conn, _ := listener.Accept()
+		//syscall.SetsockoptInt(conn, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)		
 		client := &Client{
 			conn:   conn,
 			Server: s,
