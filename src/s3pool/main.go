@@ -22,7 +22,10 @@ import (
 	"os/exec"
 	"s3pool/op"
 	"s3pool/tcp_server"
+	"s3pool/pidfile"
 	"time"
+	"strings"
+	"s3pool/mon"
 )
 
 func checkawscli() bool {
@@ -31,35 +34,12 @@ func checkawscli() bool {
 	return err == nil
 }
 
-func watchlog() {
 
-	curfname := ""
-	var curfp *os.File
-	for {
-		tm := time.Now()
-		fname := fmt.Sprintf("log/s3pool-%04d%02d%02d.log", tm.Year(), tm.Month(), tm.Day())
-		if curfname == fname {
-			time.Sleep(60 * time.Second)
-			continue
-		}
-
-		nextfp, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err != nil {
-			log.Fatalf("cannot create log file %s - %v", fname, err)
-		}
-
-		log.SetOutput(nextfp)
-
-		if curfp != nil {
-			curfp.Close()
-		}
-		curfp = nextfp
-		curfname = fname
-	}
-}
 
 var Port int
 var HomeDir string
+var NoDaemon bool
+var SetSid   bool
 var notifyBucket chan string
 
 func mkdirall(dir string) {
@@ -143,6 +123,9 @@ func serve(c *tcp_server.Client, request string) {
 func parseArgs() error {
 	portPtr := flag.Int("p", 0, "port number")
 	dirPtr := flag.String("D", "", "home directory")
+	noDaemonPtr := flag.Bool("n", false, "do not run as daemon")
+	setSidPtr := flag.Bool("s", false, "internal... do not use")
+	
 	flag.Parse()
 
 	if len(flag.Args()) != 0 {
@@ -151,6 +134,8 @@ func parseArgs() error {
 
 	Port = *portPtr
 	HomeDir = *dirPtr
+	NoDaemon = *noDaemonPtr
+	SetSid = *setSidPtr
 	if !(0 < Port && Port <= 65535) {
 		return errors.New("Missing or invalid port number")
 	}
@@ -163,8 +148,11 @@ func parseArgs() error {
 
 func exit(msg string) {
 	fmt.Fprintln(os.Stderr, msg)
+	log.Println(msg)
 	os.Exit(1)
 }
+
+
 
 func main() {
 	// make sure that the aws cli is installed
@@ -172,32 +160,49 @@ func main() {
 		exit("Cannot launch 'aws' command. Please install aws cli.")
 	}
 
+	// check flags
 	if err := parseArgs(); err != nil {
 		exit(err.Error())
 	}
 
+	// get into the home dir
 	if err := os.Chdir(HomeDir); err != nil {
 		exit(err.Error())
+	}
+
+	// setup log file
+	mon.SetLogPrefix("log/s3pool")
+	log.Println(os.Args)
+
+	// setup and check pid file
+	pidfile.SetFname(fmt.Sprintf("s3pool.%d.pid", Port))
+	if strings.Contains(pidfile.PsOutput(), "s3pool") {
+		exit("Error: another s3pool is running")
 	}
 
 	// create the necessary directories
 	checkdirs()
 
-	// start log and sleep a bit for watchlog to init first log file
-	go watchlog()
-	time.Sleep(1 * time.Second)
+	// start log 
+	go mon.Logmon()
+	
+	// Run as daemon?
+	if (! NoDaemon) {
+		mon.Daemonize(SetSid)
+	}
+
+	// write pid to pidfile
+	pidfile.Write()
 
 	// start the disk space monitor
-	go diskmon()
+	go mon.Diskmon()
 
 	// start the listmon
 	notifyBucket = make(chan string, 10)
-	go listmon(notifyBucket)
+	go mon.Listmon(notifyBucket)
 
-	// start server
+	// start server, keep serving
 	server := tcp_server.New(fmt.Sprintf("localhost:%d", Port), serve)
-
-	// keep serving
 	if err := server.Loop(); err != nil {
 		log.Fatal("Listen() failed - %v", err)
 	}

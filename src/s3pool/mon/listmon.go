@@ -10,7 +10,7 @@
  *  GPL. To inquire about commercial license, please send email to
  *  cktan@gmail.com.
  */
-package main
+package mon
 
 import (
 	"log"
@@ -19,7 +19,7 @@ import (
 )
 
 
-func listmon(newbktchannel <-chan string) {
+func Listmon(newbktchannel <-chan string) {
 	bktmap := make(map[string](bool))
 	tick := time.Tick(5 * 60 * time.Second) // 5 minute tick
 	for {

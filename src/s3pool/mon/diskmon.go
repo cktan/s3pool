@@ -10,7 +10,7 @@
  *  GPL. To inquire about commercial license, please send email to
  *  cktan@gmail.com.
  */
-package main
+package mon
 
 import (
 	"log"
@@ -79,7 +79,7 @@ func deleteSomeFiles() {
 const HWM = 90
 const LWM = 80
 
-func diskmon() {
+func Diskmon() {
 
 	for {
 		used, total, pct := diskUsage()
