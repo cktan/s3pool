@@ -100,11 +100,11 @@ func s3GetObject(bucket string, key string) (string, error) {
 	}
 
 	// lock to serialize pull on same (bucket,key)
-	s, err := strlock.Lock(bucket + ":" + key)
+	lockname, err := strlock.Lock(bucket + ":" + key)
 	if err != nil {
 		return "", err
 	}
-	defer strlock.Unlock(s)
+	defer strlock.Unlock(lockname)
 
 	// Get destination path
 	path, err := mapToPath(bucket, key)
@@ -157,18 +157,26 @@ func s3GetObject(bucket string, key string) (string, error) {
 }
 
 //
-// aws s3 cp src dst
+// aws s3api put-object 
 //
 func s3PutObject(bucket, key, fname string) error {
 	if trace_s3api {
 		log.Println("s3 put-object", bucket, key, fname)
 	}
 
+	// lock to serialize on (bucket,key)
+	lockname, err := strlock.Lock(bucket + ":" + key)
+	if err != nil {
+		return err
+	}
+	defer strlock.Unlock(lockname)
+	
+
 	cmd := exec.Command("aws", "s3api", "put-object",
 		"--bucket", bucket,
 		"--key", key,
 		"--body", fname)
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("aws cp failed -- %v", err)
 	}
