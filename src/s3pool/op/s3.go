@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"s3pool/strlock"
 	"strings"
+	"time"
 )
 
 var trace_s3api bool = false
@@ -112,6 +113,12 @@ func s3GetObject(bucket string, key string) (string, error) {
 		return "", fmt.Errorf("Cannot map bucket+key to path -- %v", err)
 	}
 
+	// If this file was recently modified, don't go fetch it
+	since, _ := fileMtimeSince(path)
+	if since > 0 && since.Minutes() < 2 {
+		return path, nil
+	}
+
 	// Get etag from meta file
 	metapath := path + "__meta__"
 	etag := extractETag(metapath)
@@ -138,6 +145,9 @@ func s3GetObject(bucket string, key string) (string, error) {
 	notModified := strings.Contains(errstr, "Not Modified") && strings.Contains(errstr, "(304)")
 	if notModified {
 		// File was cached and was not modified at source
+		// change local mtime so we don't keep calling s3 to check etag
+		now := time.Now()
+		os.Chtimes(path, now, now)
 		return path, nil
 	}
 	if err != nil {
@@ -157,7 +167,7 @@ func s3GetObject(bucket string, key string) (string, error) {
 }
 
 //
-// aws s3api put-object 
+// aws s3api put-object
 //
 func s3PutObject(bucket, key, fname string) error {
 	if trace_s3api {
@@ -170,7 +180,6 @@ func s3PutObject(bucket, key, fname string) error {
 		return err
 	}
 	defer strlock.Unlock(lockname)
-	
 
 	cmd := exec.Command("aws", "s3api", "put-object",
 		"--bucket", bucket,

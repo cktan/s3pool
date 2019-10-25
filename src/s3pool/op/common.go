@@ -18,7 +18,29 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 )
+
+func statTimes(path string) (atime, mtime, ctime time.Time, err error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	mtime = fi.ModTime()
+	stat := fi.Sys().(*syscall.Stat_t)
+	atime = time.Unix(int64(stat.Atim.Sec), int64(stat.Atim.Nsec))
+	ctime = time.Unix(int64(stat.Ctim.Sec), int64(stat.Ctim.Nsec))
+	return
+}
+
+func fileMtimeSince(path string) (time.Duration, error) {
+	_, mtime, _, err := statTimes(path)
+	if err != nil {
+		return 0, err
+	}
+	return time.Since(mtime), nil
+}
 
 func mapToPath(bucket, key string) (path string, err error) {
 	path, err = filepath.Abs(fmt.Sprintf("data/%s/%s", bucket, key))

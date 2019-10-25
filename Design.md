@@ -68,18 +68,24 @@ line is either OK or ERROR. In the case of OK, the content is defined by
 the command submitted. In the case of ERROR, the content is a pertinent
 error message.
 
+### REFRESH
+
+Refresh the `__list__` file of a bucket. This file will rot over time,
+and user should schedule a CRON job to call REFRESH from time to
+time. If there are multiple s3pools serving the same bucket, the
+REFRESH need to be scheduled on only one of the s3pool servers.
+
+Syntax: ["REFRESH", "bucket"]
+
+
 ### GLOB
 
-Returns a list of keys matching a glob pattern.
+Returns a list of keys matching a glob pattern. 
 
 SYNTAX: ["GLOB", "bucket", "pattern"]
 
-
-### REFRESH
-
-Refresh the `__dir__` file of a particular bucket.
-
-Syntax: ["REFRESH", "bucket"]
+This will result in a call to REFRESH if the __list__ file does not
+exist.
 
 
 
@@ -92,6 +98,9 @@ Syntax: ["PULL", "bucket-name", "key-name"]
 
 The reply is an absolute path in the local filesystem that the user
 can use to access the S3 object.
+
+Note: only check if file is unchanged on S3 if the file was not cached
+recently (2 minutes).
 
 
 ### PUSH 
@@ -107,9 +116,4 @@ A watchdog keeps the disk utilization under 90%. Whenever this high
 water mark is reached, the watchdog starts to delete files cached in
 the `data/` directory using some form of LRU algorithm based on access
 time.
-
-## List Monitor
-
-A watchdog keeps the `__list__` file under each bucket up-to-date by
-refreshing it every 5 minutes.
 
