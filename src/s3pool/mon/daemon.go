@@ -13,16 +13,11 @@
 package mon
 
 import (
-	"syscall"
 	"log"
 	"os"
 	"os/exec"
+	"syscall"
 )
-
-
-
-
-
 
 // This will be called twice.
 // First time with '-s' for setsid
@@ -31,7 +26,7 @@ func makeArgv(flag string) ([]string, error) {
 	argv := []string{}
 	argv = append(argv, flag)
 	argv = append(argv, os.Args[1:]...)
-	for i := range(argv) {
+	for i := range argv {
 		if argv[i] == "-D" {
 			cwd, err := os.Getwd()
 			if err != nil {
@@ -41,7 +36,7 @@ func makeArgv(flag string) ([]string, error) {
 		}
 	}
 	if flag == "-n" {
-		for i := range(argv) {
+		for i := range argv {
 			if argv[i] == "-s" {
 				argv = append(argv[:i], argv[i+1:]...)
 				break
@@ -61,24 +56,21 @@ func redirectFd() {
 	syscall.Dup(0)
 }
 
-
-
-
 // Daemonize will be called twice in two different processes
 // First time with setsid == False
 //    -> we want to fork and let the child run -s
 // Second time with setsid == True
-//    -> we will setsid and then let the child run with -n 
+//    -> we will setsid and then let the child run with -n
 func Daemonize(setsid bool) {
-	
+
 	var flag string
-	if (setsid) {
+	if setsid {
 		// set the sid
 		syscall.Setsid()
 
 		syscall.Umask(0)
 		redirectFd()
-		// next time run with no-daemonize 
+		// next time run with no-daemonize
 		flag = "-n"
 	} else {
 		// next time run with setsid

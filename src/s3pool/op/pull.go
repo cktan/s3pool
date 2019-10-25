@@ -17,14 +17,13 @@ import (
 	"s3pool/strlock"
 )
 
-
 func Pull(args []string) (string, error) {
 	if len(args) != 2 {
 		return "", errors.New("Expected 2 arguments for PULL")
 	}
 	bucket, key := args[0], args[1]
 
-	// lock to serialize pull on same (bucket,key) 
+	// lock to serialize pull on same (bucket,key)
 	s, err := strlock.Lock(bucket + ":" + key)
 	if err != nil {
 		return "", err

@@ -20,12 +20,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"s3pool/op"
-	"s3pool/tcp_server"
-	"s3pool/pidfile"
-	"time"
-	"strings"
 	"s3pool/mon"
+	"s3pool/op"
+	"s3pool/pidfile"
+	"s3pool/tcp_server"
+	"strings"
+	"time"
 )
 
 func checkawscli() bool {
@@ -34,12 +34,10 @@ func checkawscli() bool {
 	return err == nil
 }
 
-
-
 var Port int
 var HomeDir string
 var NoDaemon bool
-var SetSid   bool
+var SetSid bool
 
 func mkdirall(dir string) {
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -113,7 +111,7 @@ func parseArgs() error {
 	dirPtr := flag.String("D", "", "home directory")
 	noDaemonPtr := flag.Bool("n", false, "do not run as daemon")
 	setSidPtr := flag.Bool("s", false, "internal... do not use")
-	
+
 	flag.Parse()
 
 	if len(flag.Args()) != 0 {
@@ -139,8 +137,6 @@ func exit(msg string) {
 	log.Println(msg)
 	os.Exit(1)
 }
-
-
 
 func main() {
 	// make sure that the aws cli is installed
@@ -171,11 +167,11 @@ func main() {
 	// create the necessary directories
 	checkdirs()
 
-	// start log 
+	// start log
 	go mon.Logmon()
-	
+
 	// Run as daemon?
-	if (! NoDaemon) {
+	if !NoDaemon {
 		mon.Daemonize(SetSid)
 	}
 

@@ -1,13 +1,12 @@
 package pidfile
 
 import (
+	"fmt"
 	"io/ioutil"
-	"strings"
 	"os"
 	"os/exec"
 	"strconv"
-	"fmt"
-
+	"strings"
 )
 
 var pidFname string = "pidfile.pid"
@@ -29,14 +28,11 @@ func Read() int {
 	return ret
 }
 
-
 func Write() {
 	pid := os.Getpid()
 	byt := []byte(fmt.Sprintf("%d\n", pid))
 	ioutil.WriteFile(pidFname, byt, 0644)
 }
-
-
 
 func PsOutput() string {
 	pid := Read()

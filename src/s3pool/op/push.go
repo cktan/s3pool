@@ -16,7 +16,6 @@ import (
 	"errors"
 )
 
-
 func Push(args []string) (string, error) {
 	if len(args) != 3 {
 		return "", errors.New("Expected 3 arguments for PUSH")

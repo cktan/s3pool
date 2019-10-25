@@ -17,10 +17,10 @@ import (
 	"crypto/tls"
 	"log"
 	"net"
-	"strings"
-	"time"
 	"os/signal"
+	"strings"
 	"syscall"
+	"time"
 )
 
 // Client holds info about connection
@@ -69,7 +69,7 @@ func (c *Client) Close() error {
 func (s *server) Loop() error {
 	// ignore sigpipe
 	signal.Ignore(syscall.SIGPIPE)
-	
+
 	var listener net.Listener
 	var err error
 	if s.config == nil {
@@ -84,7 +84,7 @@ func (s *server) Loop() error {
 
 	for {
 		conn, _ := listener.Accept()
-		//syscall.SetsockoptInt(conn, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)		
+		//syscall.SetsockoptInt(conn, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
 		client := &Client{
 			conn:   conn,
 			Server: s,

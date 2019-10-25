@@ -13,18 +13,16 @@
 package op
 
 import (
+	"bufio"
 	"errors"
+	"github.com/gobwas/glob"
 	"os"
 	"strings"
-	"github.com/gobwas/glob"
-	"bufio"
 )
-
-
 
 func Glob(args []string) (string, error) {
 	var err error
-	
+
 	if len(args) != 2 {
 		return "", errors.New("expects 2 arguments for GLOB")
 	}
@@ -34,7 +32,7 @@ func Glob(args []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Open the file. Retry after Refresh() if it does not exist.
 	var file *os.File
 	for {
@@ -46,13 +44,13 @@ func Glob(args []string) (string, error) {
 				if err != nil {
 					return "", err
 				}
-				continue;
+				continue
 			}
 			return "", err
 		}
-		
+
 		file, err = os.Open(path)
-		if (err != nil) {
+		if err != nil {
 			if os.IsNotExist(err) {
 				continue
 			}

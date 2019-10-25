@@ -22,7 +22,6 @@ import (
 	"strings"
 )
 
-
 func s3ListObjects_old(bucket string) error {
 
 	// write to a temp file and then move it into bucket/__list__
@@ -44,11 +43,11 @@ func s3ListObjects_old(bucket string) error {
 	}
 	defer cmd.Wait()
 
-	// read stdout of cmd 
+	// read stdout of cmd
 	scanner := bufio.NewScanner(pipe)
 	for scanner.Scan() {
 		s := scanner.Text()
-		// Parse s of the form 
+		// Parse s of the form
 		//       "Key" : "key value"
 		nv := strings.SplitN(s, ":", 2)
 		if len(nv) != 2 {
@@ -86,8 +85,6 @@ func s3ListObjects_old(bucket string) error {
 	return nil
 }
 
-
-
 func Refresh(args []string) (string, error) {
 	if len(args) != 1 {
 		return "", errors.New("expects 1 argument for REFRESH")
@@ -100,7 +97,7 @@ func Refresh(args []string) (string, error) {
 	}
 	defer file.Close()
 	defer os.Remove(file.Name())
-	
+
 	if err = s3ListObjects(bucket, file); err != nil {
 		return "", err
 	}

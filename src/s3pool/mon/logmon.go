@@ -13,17 +13,15 @@
 package mon
 
 import (
-	"os"
-	"time"
 	"fmt"
 	"log"
+	"os"
+	"time"
 )
-
 
 var logprefix string
 var logfname string
 var logfp *os.File
-
 
 func checklog() {
 	tm := time.Now()

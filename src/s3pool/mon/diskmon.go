@@ -70,7 +70,7 @@ func deleteSomeFiles() {
 				if err != nil {
 					log.Fatal(err)
 				}
-				break;
+				break
 			}
 		}
 	}

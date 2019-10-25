@@ -4,7 +4,6 @@ import (
 	"sync"
 )
 
-
 var tabmux sync.Mutex
 var tabcond *sync.Cond
 var tab = map[string]bool{}
@@ -12,7 +11,6 @@ var tab = map[string]bool{}
 func init() {
 	tabcond = sync.NewCond(&tabmux)
 }
-
 
 func Lock(s string) (*string, error) {
 	tabmux.Lock()
@@ -24,10 +22,8 @@ func Lock(s string) (*string, error) {
 	return &s, nil
 }
 
-
 func Unlock(s *string) {
 	tabmux.Lock()
 	defer tabmux.Unlock()
 	delete(tab, *s)
 }
-

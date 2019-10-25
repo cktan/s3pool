@@ -1,27 +1,25 @@
 package op
 
 import (
-	"log"
-	"io"
-	"os/exec"
-	"fmt"
 	"bufio"
-	"strings"
-	"io/ioutil"
 	"bytes"
-	"os"
 	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
 )
 
-
 var trace_s3api bool = false
-
 
 func s3ListObjects(bucket string, wr io.Writer) error {
 	if trace_s3api {
 		log.Println("s3 list-objects", bucket)
 	}
-	
+
 	var err error
 
 	// invoke s3api to list objects
@@ -35,11 +33,11 @@ func s3ListObjects(bucket string, wr io.Writer) error {
 	}
 	defer cmd.Wait()
 
-	// read stdout of cmd 
+	// read stdout of cmd
 	scanner := bufio.NewScanner(pipe)
 	for scanner.Scan() {
 		s := scanner.Text()
-		// Parse s of the form 
+		// Parse s of the form
 		//       "Key" : "key value"
 		nv := strings.SplitN(s, ":", 2)
 		if len(nv) != 2 {
@@ -68,7 +66,6 @@ func s3ListObjects(bucket string, wr io.Writer) error {
 
 	return nil
 }
-
 
 // Read the ETag entry from a FNAME__meta__ file
 func extractETag(path string) string {
@@ -100,7 +97,7 @@ func s3GetObject(bucket string, key string) (string, error) {
 	if trace_s3api {
 		log.Println("s3 get-objects", bucket, key)
 	}
-	
+
 	// Get destination path
 	path, err := mapToPath(bucket, key)
 	if err != nil {
@@ -151,7 +148,6 @@ func s3GetObject(bucket string, key string) (string, error) {
 	return path, nil
 }
 
-
 //
 // aws s3 cp src dst
 //
@@ -159,7 +155,7 @@ func s3PutObject(bucket, key, fname string) error {
 	if trace_s3api {
 		log.Println("s3 put-object", bucket, key, fname)
 	}
-	
+
 	cmd := exec.Command("aws", "s3api", "put-object",
 		"--bucket", bucket,
 		"--key", key,
