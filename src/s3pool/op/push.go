@@ -14,25 +14,8 @@ package op
 
 import (
 	"errors"
-	"fmt"
-	"os/exec"
 )
 
-//
-// aws s3 cp src dst
-//
-func s3PutObject(bucket, key, fname string) error {
-	
-	cmd := exec.Command("aws", "s3api", "put-object",
-		"--bucket", bucket,
-		"--key", key,
-		"--body", fname)
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("aws cp failed -- %v", err)
-	}
-	return nil
-}
 
 func Push(args []string) (string, error) {
 	if len(args) != 3 {

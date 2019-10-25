@@ -32,7 +32,7 @@ func Read() int {
 
 func Write() {
 	pid := os.Getpid()
-	byt := []byte(fmt.Sprint(pid))
+	byt := []byte(fmt.Sprintf("%d\n", pid))
 	ioutil.WriteFile(pidFname, byt, 0644)
 }
 

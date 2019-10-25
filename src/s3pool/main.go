@@ -40,7 +40,6 @@ var Port int
 var HomeDir string
 var NoDaemon bool
 var SetSid   bool
-var notifyBucket chan string
 
 func mkdirall(dir string) {
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -58,6 +57,7 @@ func checkdirs() {
 
 func sendReply(c *tcp_server.Client, status, reply, request string, elapsed int) {
 	c.Send(status)
+	c.Send("\n")
 	c.Send(reply)
 	// log the request/response
 	log.Printf("%s [%s, %d bytes, %d ms]\n", request, status, len(reply), elapsed/1000)
@@ -74,9 +74,9 @@ func serve(c *tcp_server.Client, request string) {
 		endTime := time.Now()
 		elapsed := int(endTime.Sub(startTime) / 1000)
 		if err != nil {
-			sendReply(c, "ERROR\n", err.Error(), request, elapsed)
+			sendReply(c, "ERROR", err.Error(), request, elapsed)
 		} else {
-			sendReply(c, "OK\n", reply, request, elapsed)
+			sendReply(c, "OK", reply, request, elapsed)
 		}
 	}()
 
@@ -97,24 +97,12 @@ func serve(c *tcp_server.Client, request string) {
 	switch cmd {
 	case "PULL":
 		reply, err = op.Pull(args[1:])
-		if err != nil {
-			notifyBucket <- args[1]
-		}
 	case "GLOB":
 		reply, err = op.Glob(args[1:])
-		if err != nil {
-			notifyBucket <- args[1]
-		}
 	case "REFRESH":
 		reply, err = op.Refresh(args[1:])
-		if err != nil {
-			notifyBucket <- args[1]
-		}
 	case "PUSH":
 		reply, err = op.Push(args[1:])
-		if err != nil {
-			notifyBucket <- args[1]
-		}
 	default:
 		err = errors.New("Bad command: " + cmd)
 	}
@@ -196,10 +184,6 @@ func main() {
 
 	// start the disk space monitor
 	go mon.Diskmon()
-
-	// start the listmon
-	notifyBucket = make(chan string, 10)
-	go mon.Listmon(notifyBucket)
 
 	// start server, keep serving
 	server := tcp_server.New(fmt.Sprintf("localhost:%d", Port), serve)
