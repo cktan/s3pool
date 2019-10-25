@@ -91,6 +91,7 @@ func Refresh(args []string) (string, error) {
 	}
 	bucket := args[0]
 
+	// Create a temp file to store the list
 	file, err := ioutil.TempFile("tmp", "s3f_")
 	if err != nil {
 		return "", err
@@ -102,6 +103,7 @@ func Refresh(args []string) (string, error) {
 		return "", err
 	}
 
+	// Save the list file to S3
 	if err = s3PutObject(bucket, "__list__", file.Name()); err != nil {
 		return "", err
 	}

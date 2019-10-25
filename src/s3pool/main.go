@@ -154,21 +154,18 @@ func main() {
 		exit(err.Error())
 	}
 
+	// create the necessary directories
+	checkdirs()
+
 	// setup log file
 	mon.SetLogPrefix("log/s3pool")
-	log.Println(os.Args)
+	log.Println("Starting:", os.Args)
 
 	// setup and check pid file
 	pidfile.SetFname(fmt.Sprintf("s3pool.%d.pid", Port))
 	if strings.Contains(pidfile.PsOutput(), "s3pool") {
 		exit("Error: another s3pool is running")
 	}
-
-	// create the necessary directories
-	checkdirs()
-
-	// start log
-	go mon.Logmon()
 
 	// Run as daemon?
 	if !NoDaemon {
@@ -177,6 +174,9 @@ func main() {
 
 	// write pid to pidfile
 	pidfile.Write()
+
+	// start log
+	go mon.Logmon()
 
 	// start the disk space monitor
 	go mon.Diskmon()

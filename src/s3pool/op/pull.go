@@ -14,7 +14,6 @@ package op
 
 import (
 	"errors"
-	"s3pool/strlock"
 )
 
 func Pull(args []string) (string, error) {
@@ -22,13 +21,6 @@ func Pull(args []string) (string, error) {
 		return "", errors.New("Expected 2 arguments for PULL")
 	}
 	bucket, key := args[0], args[1]
-
-	// lock to serialize pull on same (bucket,key)
-	s, err := strlock.Lock(bucket + ":" + key)
-	if err != nil {
-		return "", err
-	}
-	defer strlock.Unlock(s)
 
 	// retrieve the object
 	path, err := s3GetObject(bucket, key)

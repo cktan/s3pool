@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"s3pool/strlock"
 	"strings"
 )
 
@@ -97,6 +98,13 @@ func s3GetObject(bucket string, key string) (string, error) {
 	if trace_s3api {
 		log.Println("s3 get-objects", bucket, key)
 	}
+
+	// lock to serialize pull on same (bucket,key)
+	s, err := strlock.Lock(bucket + ":" + key)
+	if err != nil {
+		return "", err
+	}
+	defer strlock.Unlock(s)
 
 	// Get destination path
 	path, err := mapToPath(bucket, key)

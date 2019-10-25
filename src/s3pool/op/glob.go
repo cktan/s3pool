@@ -28,6 +28,7 @@ func Glob(args []string) (string, error) {
 	}
 	bucket, pattern := args[0], args[1]
 
+	// prepare the pattern glob
 	g, err := glob.Compile(pattern, '/')
 	if err != nil {
 		return "", err
