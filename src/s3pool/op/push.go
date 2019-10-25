@@ -13,20 +13,20 @@
 package op
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"net/url"
 	"os/exec"
 )
 
 //
 // aws s3 cp src dst
 //
-func s3cp(src, dst string) error {
-	cmd := exec.Command("aws", "s3", "cp", src, dst)
-	var errbuf bytes.Buffer
-	cmd.Stderr = &errbuf
+func s3PutObject(bucket, key, fname string) error {
+	
+	cmd := exec.Command("aws", "s3api", "put-object",
+		"--bucket", bucket,
+		"--key", key,
+		"--body", fname)
 	err := cmd.Run()
 	if err != nil {
 		return fmt.Errorf("aws cp failed -- %v", err)
@@ -40,8 +40,7 @@ func Push(args []string) (string, error) {
 	}
 	bucket, key, path := args[0], args[1], args[2]
 
-	url := fmt.Sprintf("s3://%s/%s", url.PathEscape(bucket), url.PathEscape(key))
-	if err := s3cp(path, url); err != nil {
+	if err := s3PutObject(bucket, key, path); err != nil {
 		return "", err
 	}
 

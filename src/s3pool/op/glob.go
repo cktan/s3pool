@@ -14,7 +14,6 @@ package op
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"github.com/gobwas/glob"
@@ -24,6 +23,8 @@ import (
 
 
 func Glob(args []string) (string, error) {
+	var err error
+	
 	if len(args) != 2 {
 		return "", errors.New("expects 2 arguments for GLOB")
 	}
@@ -34,17 +35,31 @@ func Glob(args []string) (string, error) {
 		return "", err
 	}
 	
-	// Open the file. Retry after s3ListObjects() if it does not exist.
-	file, err := os.Open(fmt.Sprintf("data/%s/__list__", bucket))
-	if (err != nil) {
-		if os.IsNotExist(err) {
-			if err = s3ListObjects(bucket); err == nil {
-				file, err = os.Open(fmt.Sprintf("data/%s/__list__", bucket))
+	// Open the file. Retry after Refresh() if it does not exist.
+	var file *os.File
+	for {
+		path, err := s3GetObject(bucket, "__list__")
+		if err != nil {
+			// If not exist, need to invoke refresh
+			if strings.Contains(err.Error(), "NoSuchKey") {
+				_, err = Refresh([]string{bucket})
+				if err != nil {
+					return "", err
+				}
+				continue;
 			}
-		}
-		if (err != nil) {
 			return "", err
 		}
+		
+		file, err = os.Open(path)
+		if (err != nil) {
+			if os.IsNotExist(err) {
+				continue
+			}
+
+			return "", err
+		}
+		break
 	}
 	defer file.Close()
 

@@ -1,6 +1,7 @@
 
 all:
 	$(MAKE) -C src/s3pool all
+	$(MAKE) -C src/s3list all
 	$(MAKE) -C client/c all
 
 prefix ?= /usr/local

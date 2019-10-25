@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"s3pool/strlock"
 )
 
 // Read the ETag entry from a FNAME__meta__ file
@@ -106,6 +107,14 @@ func Pull(args []string) (string, error) {
 	}
 	bucket, key := args[0], args[1]
 
+	// lock to serialize pull on same (bucket,key) 
+	s, err := strlock.Lock(bucket + ":" + key)
+	if err != nil {
+		return "", err
+	}
+	defer strlock.Unlock(s)
+
+	// retrieve the object
 	path, err := s3GetObject(bucket, key)
 	if err != nil {
 		return "", err
