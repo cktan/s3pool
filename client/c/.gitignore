@@ -1,2 +1,5 @@
 s3glob
 s3cat
+s3pull
+s3push
+s3refresh
