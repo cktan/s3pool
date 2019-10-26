@@ -19,32 +19,6 @@ import (
 	"syscall"
 )
 
-// This will be called twice.
-// First time with '-s' for setsid
-// Second time with '-n' for do-not-daemonize
-func makeArgv(flag string) ([]string, error) {
-	argv := []string{}
-	argv = append(argv, flag)
-	argv = append(argv, os.Args[1:]...)
-	for i := range argv {
-		if argv[i] == "-D" {
-			cwd, err := os.Getwd()
-			if err != nil {
-				return []string{}, err
-			}
-			argv[i+1] = cwd
-		}
-	}
-	if flag == "-n" {
-		for i := range argv {
-			if argv[i] == "-s" {
-				argv = append(argv[:i], argv[i+1:]...)
-				break
-			}
-		}
-	}
-	return argv, nil
-}
 
 func redirectFd() {
 	syscall.Close(0)
@@ -57,35 +31,31 @@ func redirectFd() {
 }
 
 // Daemonize will be called twice in two different processes
-// First time with setsid == False
-//    -> we want to fork and let the child run -s
-// Second time with setsid == True
-//    -> we will setsid and then let the child run with -n
-func Daemonize(setsid bool) {
+// First time with daemonprep == false
+//    -> we want to fork and let the child run --daemonprep, and EXIT
+// Second time with daemonprep == true
+//    -> we will setsid, umask, redirectfd, and RETURN
+func Daemonize(daemonprep bool) {
 
-	var flag string
-	if setsid {
+	if daemonprep {
 		// set the sid
 		syscall.Setsid()
 
 		syscall.Umask(0)
 		redirectFd()
-		// next time run with no-daemonize
-		flag = "-n"
-	} else {
-		// next time run with setsid
-		flag = "-s"
+
+		return
+
 	}
 
 	execpath, err := os.Executable()
 	if err != nil {
 		log.Fatal(err)
 	}
-	argv, err := makeArgv(flag)
-	if err != nil {
-		log.Fatal("daemonize: ", err)
-	}
 
+	argv := []string{}
+	argv = append(argv, "--daemonprep")
+	argv = append(argv, os.Args[1:]...)
 	cmd := exec.Command(execpath, argv...)
 	err = cmd.Start()
 	if err != nil {

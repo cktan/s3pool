@@ -37,32 +37,34 @@ func checkawscli() bool {
 var Port int
 var HomeDir string
 var NoDaemon bool
-var SetSid bool
-
-func mkdirall(dir string) {
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "Error mkdir(%s): %v\n", dir, err)
-		os.Exit(1)
-	}
-}
+var DaemonPrep bool
 
 func checkdirs() {
 	// create the log, tmp and data directories
+	mkdirall := func(dir string) {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			fmt.Fprintf(os.Stderr, "Error mkdir(%s): %v\n", dir, err)
+			os.Exit(1)
+		}
+	}
+	
 	mkdirall("log")
 	mkdirall("tmp")
 	mkdirall("data")
 }
 
-func sendReply(c *tcp_server.Client, status, reply, request string, elapsed int) {
-	c.Send(status)
-	c.Send("\n")
-	c.Send(reply)
-	// log the request/response
-	log.Printf("%s [%s, %d bytes, %d ms]\n", request, status, len(reply), elapsed/1000)
-}
 
 // Callback function for each new request
 func serve(c *tcp_server.Client, request string) {
+
+	sendReply := func(status, reply string, elapsed int) {
+		c.Send(status)
+		c.Send("\n")
+		c.Send(reply)
+		// log the request/response
+		log.Printf("%s [%s, %d bytes, %d ms]\n", request, status, len(reply), elapsed/1000)
+	}
+	
 	startTime := time.Now()
 	var reply string
 	var err error
@@ -72,9 +74,9 @@ func serve(c *tcp_server.Client, request string) {
 		endTime := time.Now()
 		elapsed := int(endTime.Sub(startTime) / 1000)
 		if err != nil {
-			sendReply(c, "ERROR", err.Error(), request, elapsed)
+			sendReply("ERROR", err.Error(), elapsed)
 		} else {
-			sendReply(c, "OK", reply, request, elapsed)
+			sendReply("OK", reply, elapsed)
 		}
 	}()
 
@@ -110,7 +112,7 @@ func parseArgs() error {
 	portPtr := flag.Int("p", 0, "port number")
 	dirPtr := flag.String("D", "", "home directory")
 	noDaemonPtr := flag.Bool("n", false, "do not run as daemon")
-	setSidPtr := flag.Bool("s", false, "internal... do not use")
+	daemonPrepPtr := flag.Bool("daemonprep", false, "internal, do not use")
 
 	flag.Parse()
 
@@ -121,7 +123,7 @@ func parseArgs() error {
 	Port = *portPtr
 	HomeDir = *dirPtr
 	NoDaemon = *noDaemonPtr
-	SetSid = *setSidPtr
+	DaemonPrep = *daemonPrepPtr
 	if !(0 < Port && Port <= 65535) {
 		return errors.New("Missing or invalid port number")
 	}
@@ -169,7 +171,7 @@ func main() {
 
 	// Run as daemon?
 	if !NoDaemon {
-		mon.Daemonize(SetSid)
+		mon.Daemonize(DaemonPrep)
 	}
 
 	// write pid to pidfile
