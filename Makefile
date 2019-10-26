@@ -11,6 +11,11 @@ install: all
 	install client/c/s3pool.h ${prefix}/include
 	install client/c/libs3pool.a ${prefix}/lib
 	install client/c/{s3glob,s3cat,s3pull,s3push,s3refresh} ${prefix}/bin
+	install client/c/s3glob ${prefix}/bin
+	install client/c/s3cat ${prefix}/bin
+	install client/c/s3pull ${prefix}/bin
+	install client/c/s3push ${prefix}/bin
+	install client/c/s3refresh ${prefix}/bin
 
 clean:
 	$(MAKE) -C src/s3pool clean
