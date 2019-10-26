@@ -140,7 +140,20 @@ func exit(msg string) {
 	os.Exit(1)
 }
 
+func boot() {
+	f, err := os.OpenFile("/tmp/text.log",
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		exit(err.Error())
+	}
+	log.SetOutput(f)
+	log.Println(os.Args)
+}
+
+
 func main() {
+	boot()
+	
 	// make sure that the aws cli is installed
 	if !checkawscli() {
 		exit("Cannot launch 'aws' command. Please install aws cli.")
@@ -171,7 +184,15 @@ func main() {
 
 	// Run as daemon?
 	if !NoDaemon {
-		mon.Daemonize(DaemonPrep)
+		// prepare the argv.
+		// We need replace -D homedir with -D . because we have cd into homedir
+		argv := append([]string(nil), os.Args[1:]...)
+		for i := range argv {
+			if argv[i] == "-D" {
+				argv[i+1] = "."
+			}
+		}
+		mon.Daemonize(DaemonPrep, argv)
 	}
 
 	// write pid to pidfile

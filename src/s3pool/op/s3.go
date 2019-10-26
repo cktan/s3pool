@@ -28,10 +28,11 @@ func s3ListObjects(bucket string, wr io.Writer) error {
 	cmd := exec.Command("aws", "s3api", "list-objects-v2",
 		"--bucket", bucket,
 		"--query", "Contents[].{Key: Key}")
-
+	var errbuf bytes.Buffer
+	cmd.Stderr = &errbuf
 	pipe, _ := cmd.StdoutPipe()
 	if err = cmd.Start(); err != nil {
-		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
+		return fmt.Errorf("aws s3api list-objects failed -- %s", string(errbuf.Bytes()))
 	}
 	defer cmd.Wait()
 
@@ -151,7 +152,7 @@ func s3GetObject(bucket string, key string) (string, error) {
 		return path, nil
 	}
 	if err != nil {
-		return "", fmt.Errorf("aws s3api get-object failed -- %v", err)
+		return "", fmt.Errorf("aws s3api get-object failed -- %s", errstr)
 	}
 
 	// The file has been downloaded to tmppath. Now move it to the right place.
@@ -185,9 +186,11 @@ func s3PutObject(bucket, key, fname string) error {
 		"--bucket", bucket,
 		"--key", key,
 		"--body", fname)
+	var errbuf bytes.Buffer
+	cmd.Stderr = &errbuf
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("aws cp failed -- %v", err)
+		return fmt.Errorf("aws s3api put-object failed -- %s", string(errbuf.Bytes()))
 	}
 	return nil
 }

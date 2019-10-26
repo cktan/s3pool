@@ -264,7 +264,7 @@ int s3pool_refresh(int port, const char* bucket,
 {
 	char* request = 0;
 	char* reply = 0;
-	const char* argv[2] = { "REQUEST", bucket };
+	const char* argv[2] = { "REFRESH", bucket };
 
 	request = mkrequest(2, argv, errmsg, errmsgsz);
 	if (!request) {

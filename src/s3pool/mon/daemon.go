@@ -35,7 +35,7 @@ func redirectFd() {
 //    -> we want to fork and let the child run --daemonprep, and EXIT
 // Second time with daemonprep == true
 //    -> we will setsid, umask, redirectfd, and RETURN
-func Daemonize(daemonprep bool) {
+func Daemonize(daemonprep bool, argv []string) {
 
 	if daemonprep {
 		// set the sid
@@ -53,9 +53,10 @@ func Daemonize(daemonprep bool) {
 		log.Fatal(err)
 	}
 
-	argv := []string{}
-	argv = append(argv, "--daemonprep")
-	argv = append(argv, os.Args[1:]...)
+	// prepend the flag --daemonprep
+	argv = append([]string{"--daemonprep"}, argv...)
+
+	// exec it
 	cmd := exec.Command(execpath, argv...)
 	err = cmd.Start()
 	if err != nil {

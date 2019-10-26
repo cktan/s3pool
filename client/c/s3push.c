@@ -75,7 +75,10 @@ int main(int argc, char* argv[])
 		usage(argv[0], "Need path");
 	}
 	char* path = argv[optind++];
-
+	if (*path != '/') {
+		usage(argv[0], "Need absolute path!");
+	}
+	
 	if (optind != argc) {
 		usage(argv[0], "Extra arguments");
 	}
