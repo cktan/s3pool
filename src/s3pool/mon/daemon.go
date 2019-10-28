@@ -19,7 +19,6 @@ import (
 	"syscall"
 )
 
-
 func redirectFd() {
 	syscall.Close(0)
 	syscall.Close(1)

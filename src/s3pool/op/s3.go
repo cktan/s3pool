@@ -16,6 +16,7 @@ import (
 )
 
 var trace_s3api bool = false
+var use_goapi bool = false
 
 func s3ListObjects(bucket string, wr io.Writer) error {
 	if trace_s3api {

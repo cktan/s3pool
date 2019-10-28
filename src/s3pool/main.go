@@ -47,12 +47,11 @@ func checkdirs() {
 			os.Exit(1)
 		}
 	}
-	
+
 	mkdirall("log")
 	mkdirall("tmp")
 	mkdirall("data")
 }
-
 
 // Callback function for each new request
 func serve(c *tcp_server.Client, request string) {
@@ -64,7 +63,7 @@ func serve(c *tcp_server.Client, request string) {
 		// log the request/response
 		log.Printf("%s [%s, %d bytes, %d ms]\n", request, status, len(reply), elapsed/1000)
 	}
-	
+
 	startTime := time.Now()
 	var reply string
 	var err error
@@ -150,10 +149,9 @@ func boot() {
 	log.Println(os.Args)
 }
 
-
 func main() {
-	boot()
-	
+	// boot()
+
 	// make sure that the aws cli is installed
 	if !checkawscli() {
 		exit("Cannot launch 'aws' command. Please install aws cli.")
