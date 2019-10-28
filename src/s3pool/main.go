@@ -202,6 +202,9 @@ func main() {
 	// start the disk space monitor
 	go mon.Diskmon()
 
+	// start pidfile monitor
+	go mon.Pidmon()
+
 	// start server, keep serving
 	server := tcp_server.New(fmt.Sprintf("localhost:%d", Port), serve)
 	if err := server.Loop(); err != nil {
