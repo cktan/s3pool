@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -34,19 +35,30 @@ func Write() {
 	ioutil.WriteFile(pidFname, byt, 0644)
 }
 
-func PsOutput() string {
+func PsCommand() string {
 	pid := Read()
 	if pid == 0 {
 		return ""
 	}
 
-	cmd := exec.Command("ps", "-h", "-p", strconv.Itoa(pid))
+	cmd := exec.Command("ps", "-h", "-p", strconv.Itoa(pid), "-o", "comm")
 	out, err := cmd.Output()
 	if err != nil {
 		return ""
 	}
 
-	return string(out)
+	return strings.Trim(string(out), " \t\r\n")
 }
 
+func IsRunning() bool {
+	// my exec name
+	a, _ := os.Executable()
+	a = filepath.Base(a)
 
+	// get name of process with pidfile
+	s := PsCommand()
+	s = strings.Trim(s, " \t\r\n")
+	s = filepath.Base(s)
+
+	return s == a
+}

@@ -15,8 +15,8 @@ package mon
 import (
 	"log"
 	"os"
-	"time"
 	"s3pool/pidfile"
+	"time"
 )
 
 func Pidmon() {

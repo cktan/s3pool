@@ -24,7 +24,6 @@ import (
 	"s3pool/op"
 	"s3pool/pidfile"
 	"s3pool/tcp_server"
-	"strings"
 	"time"
 )
 
@@ -176,7 +175,7 @@ func main() {
 
 	// setup and check pid file
 	pidfile.SetFname(fmt.Sprintf("s3pool.%d.pid", Port))
-	if strings.Contains(pidfile.PsOutput(), "s3pool") {
+	if pidfile.IsRunning() {
 		exit("Error: another s3pool is running")
 	}
 
