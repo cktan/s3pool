@@ -94,10 +94,14 @@ exist.
 If the file is cached AND is unchanged on S3, return it.
 Otherwise, pull the file from S3.
 
-Syntax: ["PULL", "bucket-name", "key-name"]
+Syntax: ["PULL", "bucket-name", "key-name", ["key-name-2"]]
+
+The `key-name-2` above is optional. If supplied, pull the `key-name`
+object and return it while firing off a background job to prefetch
+`key-name-2`.
 
 The reply is an absolute path in the local filesystem that the user
-can use to access the S3 object.
+can use to access the S3 object corresponding to `key-name`.
 
 Note: only check if file is unchanged on S3 if the file was not cached
 recently (2 minutes).
