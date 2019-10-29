@@ -94,7 +94,7 @@ exist.
 If the file is cached AND is unchanged on S3, return it.
 Otherwise, pull the file from S3.
 
-Syntax: ["PULL", "bucket-name", "key-name", ["key-name-2"]]
+Syntax: ["PULL", "bucket-name", "key-name", "key-name-2"]
 
 The `key-name-2` above is optional. If supplied, pull the `key-name`
 object and return it while firing off a background job to prefetch
