@@ -17,8 +17,8 @@ import (
 )
 
 func Pull(args []string) (string, error) {
-	if len(args) != 2 {
-		return "", errors.New("Expected 2 arguments for PULL")
+	if len(args) != 2 && len(args) != 3 {
+		return "", errors.New("Expected 2 or 3 arguments for PULL")
 	}
 	bucket, key := args[0], args[1]
 
@@ -26,6 +26,12 @@ func Pull(args []string) (string, error) {
 	path, err := s3GetObject(bucket, key)
 	if err != nil {
 		return "", err
+	}
+
+	if len(args) == 3 {
+		nextKey := args[2]
+		// prefetch ... fire and forget
+		go s3GetObject(bucket, nextKey)
 	}
 
 	return path + "\n", nil

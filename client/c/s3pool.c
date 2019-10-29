@@ -21,7 +21,9 @@ static char* mkrequest(int argc, const char** argv, char* errmsg, int errmsgsz)
 	char* request = 0;
 
 	for (i = 0; i < argc; i++) {
-		len += strlen(argv[i]) + 4; /* for quote quote comma space */
+		// for each arg X, we want to make 'X', - quote quote comma space
+		// so, reserve extra space for those chars here
+		len += strlen(argv[i]) + 4; 
 		if (strchr(argv[i], '\"')) {
 			snprintf(errmsg, errmsgsz, "DQUOTE char not allowed");
 			goto bailout;
@@ -45,7 +47,9 @@ static char* mkrequest(int argc, const char** argv, char* errmsg, int errmsgsz)
 	}
 	*p++ = ']';
 	*p++ = '\n';
-	*p = 0;
+	*p = 0;						/* NUL */
+
+	assert(strlen(p) + 1 <= len);
 	return request;
 
 	bailout:
@@ -101,7 +105,7 @@ static char* chat(int port, const char* request,
 	int replysz = 0;
 	char* reply = 0;
 
-	// socket create and varification
+	// socket create and verification
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1) {
 		snprintf(errmsg, errmsgsz, "socket: %s", strerror(errno));
@@ -191,15 +195,16 @@ static char* chat(int port, const char* request,
    On failure, return a NULL ptr.
 
  */
-char* s3pool_pull(int port, const char* bucket, const char* key,
-				  char* errmsg, int errmsgsz)
+char* s3pool_pull_ex(int port, const char* bucket, const char* key,
+					 const char* nextkey,
+					 char* errmsg, int errmsgsz)
 {
 	char* request = 0;
 	char* reply = 0;
 	int fd = -1;
-	const char* argv[3] = {"PULL", bucket, key};
-	
-	request = mkrequest(3, argv, errmsg, errmsgsz);
+	const char* argv[4] = {"PULL", bucket, key, nextkey};
+
+	request = mkrequest(nextkey ? 4 : 3, argv, errmsg, errmsgsz);
 	if (!request) {
 		goto bailout;
 	}
@@ -222,6 +227,11 @@ char* s3pool_pull(int port, const char* bucket, const char* key,
 	return 0;
 }
 
+char* s3pool_pull(int port, const char* bucket, const char* key,
+				  char* errmsg, int errmsgsz)
+{
+	return s3pool_pull_ex(port, bucket, key, 0, errmsg, errmsgsz);
+}
 
 
 

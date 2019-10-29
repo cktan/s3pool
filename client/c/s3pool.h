@@ -19,6 +19,9 @@
  */
 EXTERN char* s3pool_pull(int port, const char* bucket, const char* key,
 						 char* errmsg, int errmsgsz);
+EXTERN char* s3pool_pull_ex(int port, const char* bucket, const char* key,
+							const char* nextkey, /* hint for prefetching next obj */
+							char* errmsg, int errmsgsz);
 
 
 /**
