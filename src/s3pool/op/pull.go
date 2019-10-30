@@ -17,6 +17,9 @@ import (
 	"strings"
 )
 
+
+const _MAXWORKER = 20
+
 func pmap(processitem func(idx int), maxidx int, maxworker int) {
 	fin := make(chan int)
 	gate := make(chan int, maxworker)
@@ -54,7 +57,7 @@ func Pull(args []string) (string, error) {
 		path[i], patherr[i] = s3GetObject(bucket, keys[i], false)
 	}
 
-	pmap(dowork, nkeys, 50)
+	pmap(dowork, nkeys, _MAXWORKER)
 
 	var reply strings.Builder
 	for i := 0; i < nkeys; i++ {
