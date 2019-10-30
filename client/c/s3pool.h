@@ -19,8 +19,21 @@
  */
 EXTERN char* s3pool_pull(int port, const char* bucket, const char* key,
 						 char* errmsg, int errmsgsz);
-EXTERN char* s3pool_pull_ex(int port, const char* bucket, const char* key,
-							const char* nextkey, /* hint for prefetching next obj */
+
+
+/**
+
+   PULL multiple file from S3 to local disk. 
+ 
+   On success, return the paths to the file pulled down from S3 in a
+   list of strings terminated by NEWLINE. Caller must free() the
+   buffer returned.
+ 
+   On failure, return a NULL ptr.
+
+ */
+EXTERN char* s3pool_pull_ex(int port, const char* bucket,
+							const char* key[], int nkey,
 							char* errmsg, int errmsgsz);
 
 

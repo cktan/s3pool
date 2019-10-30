@@ -14,25 +14,59 @@ package op
 
 import (
 	"errors"
+	"strings"
 )
 
+
+func pmap(processitem func(idx int), maxidx int, maxworker int) {
+	fin := make(chan int)
+	gate := make(chan int, maxworker);
+	defer close(fin)
+	defer close(gate)
+	
+	for i := 0; i < maxworker; i++ {
+		gate <- 1
+	}
+	for i := 0; i < maxidx; i++ {
+		<- gate
+		go func(idx int) {
+			processitem(idx)
+			gate <- 1
+			fin <- idx
+		}(i)
+	}
+
+	for i := 0; i < maxidx; i++ {
+		<- fin
+	}
+}
+
+
 func Pull(args []string) (string, error) {
-	if len(args) != 2 && len(args) != 3 {
-		return "", errors.New("Expected 2 or 3 arguments for PULL")
+	if len(args) < 2 {
+		return "", errors.New("Expected at least 2 arguments for PULL")
 	}
-	bucket, key := args[0], args[1]
+	bucket := args[0]
+	keys := args[1:]
+	nkeys := len(keys)
+	path := make([]string, nkeys)
+	patherr := make([]error, nkeys)
 
-	// retrieve the object
-	path, err := s3GetObject(bucket, key)
-	if err != nil {
-		return "", err
-	}
-
-	if len(args) == 3 {
-		nextKey := args[2]
-		// prefetch ... fire and forget
-		go s3GetObject(bucket, nextKey)
+	dowork := func(i int) {
+		path[i], patherr[i] = s3GetObject(bucket, keys[i])
 	}
 
-	return path + "\n", nil
+	pmap(dowork, nkeys, 50)
+
+	var reply strings.Builder
+	for i := 0; i < nkeys; i++ {
+		if patherr[i] != nil {
+			return "", patherr[i]
+		}
+		reply.WriteString(path[i])
+		reply.WriteString("\n")
+	}
+
+
+	return reply.String(), nil
 }

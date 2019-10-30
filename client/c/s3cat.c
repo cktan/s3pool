@@ -7,7 +7,7 @@
 
 void usage(const char* pname, const char* msg)
 {
-	fprintf(stderr, "Usage: %s [-h] -p port bucket:key ...\n", pname);
+	fprintf(stderr, "Usage: %s [-h] -p port bucket key [key...]\n", pname);
 	fprintf(stderr, "Copy s3 files to stdout.\n\n");
 	fprintf(stderr, "    -p port : specify the port number of s3pool process\n");
 	fprintf(stderr, "    -h      : print this help message\n");
@@ -27,29 +27,8 @@ void fatal(const char* msg)
 }
 
 
-void doit(int port, char* bktkey_)
+void catfile(const char* fname)
 {
-	char errmsg[200];
-	char* bktkey = strdup(bktkey_);
-	if (!bktkey) {
-		fatal("out of memory");
-	}
-
-	char* colon = strchr(bktkey, ':');
-	if (!colon) {
-		fatal("missing colon char in bucket:key");
-	}
-
-	*colon = 0;
-	char* bucket = bktkey;
-	char* key = colon+1;
-
-	char* fname = s3pool_pull(port, bucket, key,
-							  errmsg, sizeof(errmsg));
-	if (!fname) {
-		fatal(errmsg);
-	}
-
 	FILE* fp = fopen(fname, "r");
 	if (!fp) {
 		perror("fopen");
@@ -72,8 +51,29 @@ void doit(int port, char* bktkey_)
 
 
 	fclose(fp);
-	free(bktkey);
-	
+}
+
+
+void doit(int port, char* bucket, const char* key[], int nkey)
+{
+	char errmsg[200];
+	char* reply = s3pool_pull_ex(port, bucket, key, nkey,
+								 errmsg, sizeof(errmsg));
+	if (!reply) {
+		fatal(errmsg);
+	}
+
+	char* p = reply;
+	while (1) {
+		char* q = strchr(p, '\n');
+		if (!q || p == q) break;
+
+		*q = 0;
+		catfile(p);
+		p = q+1;
+	}
+
+	free(reply);
 }
 
 
@@ -104,10 +104,15 @@ int main(int argc, char* argv[])
 	if (optind >= argc) {
 		usage(argv[0], "Need bucket and key");
 	}
-	
-	for (int i = optind; i < argc; i++) {
-		doit(port, argv[i]);
+
+	char* bucket = argv[optind++];
+	if (optind >= argc) {
+		usage(argv[0], "Need key");
 	}
+
+	const char** key = (const char**) &argv[optind];
+	int nkey = argc - optind;
+	doit(port, bucket, key, nkey);
 
 	return 0;
 }

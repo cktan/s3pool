@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var trace_s3api bool = false
+var trace_s3api bool = true
 var use_goapi bool = false
 
 func s3ListObjects(bucket string, wr io.Writer) error {
@@ -117,7 +117,7 @@ func s3GetObject(bucket string, key string) (string, error) {
 
 	// If this file was recently modified, don't go fetch it
 	since, _ := fileMtimeSince(path)
-	if since > 0 && since.Minutes() < 2 {
+	if since > 0 && since.Minutes() < 30 {
 		return path, nil
 	}
 
