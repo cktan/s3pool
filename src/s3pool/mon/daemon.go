@@ -21,11 +21,12 @@ import (
 
 func redirectFd() {
 	syscall.Close(0)
-	syscall.Close(1)
-	syscall.Close(2)
-
 	syscall.Open("/dev/null", syscall.O_RDWR, 0666)
+
+	syscall.Close(1)
 	syscall.Dup(0)
+
+	syscall.Close(2)
 	syscall.Dup(0)
 }
 

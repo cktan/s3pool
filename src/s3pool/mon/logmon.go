@@ -16,12 +16,24 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"syscall"
 	"time"
 )
 
 var logprefix string
 var logfname string
 var logfp *os.File
+
+func redirectStderr(fname string) {
+	f, err := os.OpenFile(fname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Failed to redirect stderr to file: %v", err)
+	}
+	err = syscall.Dup2(int(f.Fd()), int(os.Stderr.Fd()))
+	if err != nil {
+		log.Fatalf("Failed to redirect stderr to file: %v", err)
+	}
+}
 
 func checklog() {
 	tm := time.Now()
@@ -38,6 +50,8 @@ func checklog() {
 		}
 		logfp = nextfp
 		logfname = fname
+
+		redirectStderr(fmt.Sprintf("%s-%04d%02d%02d.stderr", logprefix, tm.Year(), tm.Month(), tm.Day()))
 	}
 }
 
