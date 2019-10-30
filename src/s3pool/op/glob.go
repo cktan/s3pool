@@ -37,7 +37,7 @@ func Glob(args []string) (string, error) {
 	// Open the file. Retry after Refresh() if it does not exist.
 	var file *os.File
 	for {
-		path, err := s3GetObject(bucket, "__list__")
+		path, err := s3GetObject(bucket, "__list__", false)
 		if err != nil {
 			// If not exist, need to invoke refresh
 			if strings.Contains(err.Error(), "NoSuchKey") {

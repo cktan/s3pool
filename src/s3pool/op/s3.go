@@ -97,7 +97,7 @@ func extractETag(path string) string {
 //
 //   aws s3api get-object --bucket BUCKET --key KEY --if-none-match ETAG tmppath
 //
-func s3GetObject(bucket string, key string) (string, error) {
+func s3GetObject(bucket string, key string, force bool) (string, error) {
 	if trace_s3api {
 		log.Println("s3 get-objects", bucket, key)
 	}

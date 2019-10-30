@@ -17,18 +17,17 @@ import (
 	"strings"
 )
 
-
 func pmap(processitem func(idx int), maxidx int, maxworker int) {
 	fin := make(chan int)
-	gate := make(chan int, maxworker);
+	gate := make(chan int, maxworker)
 	defer close(fin)
 	defer close(gate)
-	
+
 	for i := 0; i < maxworker; i++ {
 		gate <- 1
 	}
 	for i := 0; i < maxidx; i++ {
-		<- gate
+		<-gate
 		go func(idx int) {
 			processitem(idx)
 			gate <- 1
@@ -37,10 +36,9 @@ func pmap(processitem func(idx int), maxidx int, maxworker int) {
 	}
 
 	for i := 0; i < maxidx; i++ {
-		<- fin
+		<-fin
 	}
 }
-
 
 func Pull(args []string) (string, error) {
 	if len(args) < 2 {
@@ -53,7 +51,7 @@ func Pull(args []string) (string, error) {
 	patherr := make([]error, nkeys)
 
 	dowork := func(i int) {
-		path[i], patherr[i] = s3GetObject(bucket, keys[i])
+		path[i], patherr[i] = s3GetObject(bucket, keys[i], false)
 	}
 
 	pmap(dowork, nkeys, 50)
@@ -66,7 +64,6 @@ func Pull(args []string) (string, error) {
 		reply.WriteString(path[i])
 		reply.WriteString("\n")
 	}
-
 
 	return reply.String(), nil
 }
