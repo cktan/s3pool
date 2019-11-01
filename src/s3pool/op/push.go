@@ -21,8 +21,12 @@ func Push(args []string) (string, error) {
 		return "", errors.New("Expected 3 arguments for PUSH")
 	}
 	bucket, key, path := args[0], args[1], args[2]
+	if err := checkCatalog(bucket); err != nil {
+		return "", err
+	}
 
-	if err := s3PutObject(bucket, key, path); err != nil {
+	err := s3PutObject(bucket, key, path)
+	if err != nil {
 		return "", err
 	}
 

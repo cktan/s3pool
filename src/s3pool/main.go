@@ -27,6 +27,9 @@ import (
 	"time"
 )
 
+func dummy() {
+}
+
 func checkawscli() bool {
 	cmd := exec.Command("aws", "--version")
 	err := cmd.Run()
@@ -150,6 +153,7 @@ func boot() {
 
 func main() {
 	// boot()
+	dummy()
 
 	// make sure that the aws cli is installed
 	if !checkawscli() {

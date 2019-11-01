@@ -17,7 +17,6 @@ import (
 	"strings"
 )
 
-
 const _MAXWORKER = 20
 
 func pmap(processitem func(idx int), maxidx int, maxworker int) {
@@ -48,6 +47,10 @@ func Pull(args []string) (string, error) {
 		return "", errors.New("Expected at least 2 arguments for PULL")
 	}
 	bucket := args[0]
+	if err := checkCatalog(bucket); err != nil {
+		return "", err
+	}
+
 	keys := args[1:]
 	nkeys := len(keys)
 	path := make([]string, nkeys)

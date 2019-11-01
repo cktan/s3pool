@@ -17,6 +17,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"s3pool/cat"
+	"s3pool/strlock"
 	"strings"
 	"syscall"
 	"time"
@@ -77,4 +79,24 @@ func moveFile(src, dst string) error {
 	}
 
 	return nil
+}
+
+// Check that we have a catalog on bucket. If not, create it.
+func checkCatalog(bucket string) error {
+
+	// serialize check catalog on bucket to prevent
+	// concurrent creation of catalog on the same bucket.
+	lockname, err := strlock.Lock("refresh " + bucket)
+	if err != nil {
+		return err
+	}
+	defer strlock.Unlock(lockname)
+
+	if cat.Exists(bucket) {
+		return nil
+	}
+
+	// Refresh() will (re)create it 
+	_, err = Refresh([]string{bucket})
+	return err
 }

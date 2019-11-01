@@ -5,20 +5,20 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"s3pool/cat"
 	"s3pool/strlock"
 	"strings"
 	"time"
 )
 
-var trace_s3api bool = true
+var trace_s3api bool = false
 var use_goapi bool = false
 
-func s3ListObjects(bucket string, wr io.Writer) error {
+func s3ListObjects(bucket string, notify func(key, etag string)) error {
 	if trace_s3api {
 		log.Println("s3 list-objects", bucket)
 	}
@@ -28,7 +28,7 @@ func s3ListObjects(bucket string, wr io.Writer) error {
 	// invoke s3api to list objects
 	cmd := exec.Command("aws", "s3api", "list-objects-v2",
 		"--bucket", bucket,
-		"--query", "Contents[].{Key: Key}")
+		"--query", "Contents[].{Key: Key, ETag: ETag}")
 	var errbuf bytes.Buffer
 	cmd.Stderr = &errbuf
 	pipe, _ := cmd.StdoutPipe()
@@ -39,25 +39,33 @@ func s3ListObjects(bucket string, wr io.Writer) error {
 
 	// read stdout of cmd
 	scanner := bufio.NewScanner(pipe)
+	var key string
 	for scanner.Scan() {
 		s := scanner.Text()
 		// Parse s of the form
 		//       "Key" : "key value"
+		//       "ETag" : "\"etag\""
 		nv := strings.SplitN(s, ":", 2)
 		if len(nv) != 2 {
 			continue
 		}
-		name := strings.Trim(nv[0], " \t\"")
-		if name != "Key" {
+		name := strings.Trim(nv[0], " \t\",")
+		value := strings.Trim(nv[1], " \t\",\\")
+
+		if name == "Key" {
+			key = value
 			continue
 		}
-		value := strings.Trim(nv[1], " \t\"")
-		// ignore empty value or value that looks like a DIR (ending with / )
-		if len(value) == 0 || value[len(value)-1] == '/' {
+		if name == "ETag" {
+			// ignore empty value or value that looks like a DIR (ending with / )
+			if len(key) > 0 && key[len(key)-1] != '/' {
+				etag := value
+				notify(key, etag)
+			}
+			key = ""
 			continue
 		}
-		value = value + "\n"
-		wr.Write([]byte(value))
+		log.Println("ignore", name)
 	}
 	if err = scanner.Err(); err != nil {
 		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
@@ -75,21 +83,24 @@ func s3ListObjects(bucket string, wr io.Writer) error {
 func extractETag(path string) string {
 	byt, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "dummy"
+		return ""
 	}
 
 	var dat map[string]interface{}
 	err = json.Unmarshal(byt, &dat)
 	if err != nil {
-		return "dummy"
+		return ""
 	}
 
 	ret, ok := dat["ETag"]
 	if !ok {
-		return "dummy"
+		return ""
 	}
 
-	return ret.(string)
+	etag := ret.(string)
+	etag = strings.Trim(etag, "\"")
+
+	return etag
 }
 
 //
@@ -115,15 +126,18 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 		return "", fmt.Errorf("Cannot map bucket+key to path -- %v", err)
 	}
 
-	// If this file was recently modified, don't go fetch it
-	since, _ := fileMtimeSince(path)
-	if since > 0 && since.Minutes() < 30 {
-		return path, nil
-	}
-
 	// Get etag from meta file
 	metapath := path + "__meta__"
 	etag := extractETag(metapath)
+	catetag := cat.Find(bucket, key)
+
+	// If etag did not change, don't go fetch it
+	if etag != "" && etag == catetag && !force {
+		if trace_s3api {
+			log.Println(" ... cache hit:", key)
+		}
+		return path, nil
+	}
 
 	// Prepare to write to tmp file
 	tmppath, err := mktmpfile()
@@ -150,6 +164,9 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 		// change local mtime so we don't keep calling s3 to check etag
 		now := time.Now()
 		os.Chtimes(path, now, now)
+		if etag != catetag {
+			cat.Update(bucket, key, etag)
+		}
 		return path, nil
 	}
 	if err != nil {
@@ -163,6 +180,12 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 
 	// Save the meta info
 	ioutil.WriteFile(metapath, outbuf.Bytes(), 0644)
+
+	// Update catalog with the new etag
+	etag = extractETag(metapath)
+	if etag != "" {
+		cat.Update(bucket, key, etag)
+	}
 
 	// Done!
 	return path, nil
@@ -183,6 +206,16 @@ func s3PutObject(bucket, key, fname string) error {
 	}
 	defer strlock.Unlock(lockname)
 
+	// we need to remove the file and meta file from cache if they are there
+	datapath, err := mapToPath(bucket, key)
+	if err != nil {
+		return err
+	}
+	metapath := datapath + "__meta__"
+	os.Remove(metapath)
+	os.Remove(datapath)
+
+	// push the file to AWS
 	cmd := exec.Command("aws", "s3api", "put-object",
 		"--bucket", bucket,
 		"--key", key,
@@ -193,5 +226,8 @@ func s3PutObject(bucket, key, fname string) error {
 	if err != nil {
 		return fmt.Errorf("aws s3api put-object failed -- %s", string(errbuf.Bytes()))
 	}
+
+	// reflect the new file in our catalog
+	cat.Update(bucket, key, "new")
 	return nil
 }

@@ -8,7 +8,7 @@
 void usage(const char* pname, const char* msg)
 {
 	fprintf(stderr, "Usage: %s [-h] -p port bucket\n", pname);
-	fprintf(stderr, "Refresh the __list__ file in an s3 bucket.\n\n");
+	fprintf(stderr, "Refresh the __catalog__ file in an s3 bucket.\n\n");
 	fprintf(stderr, "    -p port : specify the port number of s3pool process\n");
 	fprintf(stderr, "    -h      : print this help message\n");
 	fprintf(stderr, "\n");

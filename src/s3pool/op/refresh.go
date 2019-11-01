@@ -14,32 +14,32 @@ package op
 
 import (
 	"errors"
-	"io/ioutil"
-	"os"
+	"s3pool/cat"
 )
 
+/*
+  1. List all objects in bucket
+  2. save the key[] and etag[] to catalog
+*/
 func Refresh(args []string) (string, error) {
 	if len(args) != 1 {
 		return "", errors.New("expects 1 argument for REFRESH")
 	}
 	bucket := args[0]
+	// DO NOT checkCatalog here. We will update it!
 
-	// Create a temp file to store the list
-	file, err := ioutil.TempFile("tmp", "s3f_")
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	defer os.Remove(file.Name())
-
-	if err = s3ListObjects(bucket, file); err != nil {
-		return "", err
+	key := make([]string, 0, 100)
+	etag := make([]string, 0, 100)
+	save := func(k, t string) {
+		key = append(key, k)
+		etag = append(etag, t)
 	}
 
-	// Save the list file to S3
-	if err = s3PutObject(bucket, "__list__", file.Name()); err != nil {
+	if err := s3ListObjects(bucket, save); err != nil {
 		return "", err
 	}
+
+	cat.Store(bucket, key, etag)
 
 	return "\n", nil
 }

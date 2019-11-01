@@ -13,10 +13,9 @@
 package op
 
 import (
-	"bufio"
 	"errors"
 	"github.com/gobwas/glob"
-	"os"
+	"s3pool/cat"
 	"strings"
 )
 
@@ -27,6 +26,9 @@ func Glob(args []string) (string, error) {
 		return "", errors.New("expects 2 arguments for GLOB")
 	}
 	bucket, pattern := args[0], args[1]
+	if err = checkCatalog(bucket); err != nil {
+		return "", err
+	}
 
 	// prepare the pattern glob
 	g, err := glob.Compile(pattern, '/')
@@ -34,48 +36,15 @@ func Glob(args []string) (string, error) {
 		return "", err
 	}
 
-	// Open the file. Retry after Refresh() if it does not exist.
-	var file *os.File
-	for {
-		path, err := s3GetObject(bucket, "__list__", false)
-		if err != nil {
-			// If not exist, need to invoke refresh
-			if strings.Contains(err.Error(), "NoSuchKey") {
-				_, err = Refresh([]string{bucket})
-				if err != nil {
-					return "", err
-				}
-				continue
-			}
-			return "", err
-		}
-
-		file, err = os.Open(path)
-		if err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-
-			return "", err
-		}
-		break
+	filter := func(key string) bool {
+		return g.Match(key)
 	}
-	defer file.Close()
+	key := cat.Scan(bucket, filter)
 
-	// Match the pattern against content of the __list__ file
 	var replyBuilder strings.Builder
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		matched := g.Match(line)
-		if matched {
-			replyBuilder.WriteString(line)
-			replyBuilder.WriteString("\n")
-		}
-	}
-
-	if err = scanner.Err(); err != nil {
-		return "", err
+	for i := range key {
+		replyBuilder.WriteString(key[i])
+		replyBuilder.WriteString("\n")
 	}
 
 	return replyBuilder.String(), nil
