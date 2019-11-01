@@ -28,6 +28,15 @@ import (
 )
 
 func dummy() {
+	/*
+		byt, err := ioutil.ReadFile("t.json")
+		if err != nil {
+			log.Fatal(err)
+		}
+		collection := &ListCollection{Contents: make([]ListRecord, 0, 100)}
+		json.Unmarshal(byt, collection)
+		fmt.Println(collection)
+	*/
 }
 
 func checkawscli() bool {

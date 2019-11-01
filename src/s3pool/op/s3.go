@@ -12,11 +12,19 @@ import (
 	"s3pool/cat"
 	"s3pool/strlock"
 	"strings"
-	"time"
 )
 
-var trace_s3api bool = false
+var trace_s3api bool = true
 var use_goapi bool = false
+
+type ListRecord struct {
+	Key  string
+	Etag string
+}
+
+type ListCollection struct {
+	Contents []ListRecord
+}
 
 func s3ListObjects(bucket string, notify func(key, etag string)) error {
 	if trace_s3api {
@@ -40,13 +48,17 @@ func s3ListObjects(bucket string, notify func(key, etag string)) error {
 	// read stdout of cmd
 	scanner := bufio.NewScanner(pipe)
 	var key string
+	var etag string
 	for scanner.Scan() {
 		s := scanner.Text()
 		// Parse s of the form
 		//       "Key" : "key value"
 		//       "ETag" : "\"etag\""
 		nv := strings.SplitN(s, ":", 2)
+
 		if len(nv) != 2 {
+			key = ""
+			etag = ""
 			continue
 		}
 		name := strings.Trim(nv[0], " \t\",")
@@ -54,18 +66,15 @@ func s3ListObjects(bucket string, notify func(key, etag string)) error {
 
 		if name == "Key" {
 			key = value
-			continue
+		} else if name == "ETag" {
+			etag = value
 		}
-		if name == "ETag" {
-			// ignore empty value or value that looks like a DIR (ending with / )
-			if len(key) > 0 && key[len(key)-1] != '/' {
-				etag := value
-				notify(key, etag)
-			}
-			key = ""
-			continue
+
+		if key != "" && etag != "" {
+			notify(key, etag)
+			key, etag = "", ""
+
 		}
-		log.Println("ignore", name)
 	}
 	if err = scanner.Err(); err != nil {
 		return fmt.Errorf("aws s3api list-objects failed -- %v", err)
@@ -139,6 +148,12 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 		return path, nil
 	}
 
+	if trace_s3api {
+		if catetag == "" {
+			log.Println(" ... missing catalog entry")
+		}
+	}
+
 	// Prepare to write to tmp file
 	tmppath, err := mktmpfile()
 	if err != nil {
@@ -161,10 +176,11 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 	notModified := strings.Contains(errstr, "Not Modified") && strings.Contains(errstr, "(304)")
 	if notModified {
 		// File was cached and was not modified at source
-		// change local mtime so we don't keep calling s3 to check etag
-		now := time.Now()
-		os.Chtimes(path, now, now)
-		if etag != catetag {
+		//log.Println(" ... file not modified")
+		//log.Println("   ... etag", etag)
+		//log.Println("   ... catetag", catetag)
+		if etag != catetag && etag != "" {
+			//log.Println(" ... update", key, etag)
 			cat.Update(bucket, key, etag)
 		}
 		return path, nil
@@ -184,6 +200,7 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 	// Update catalog with the new etag
 	etag = extractETag(metapath)
 	if etag != "" {
+		//log.Println(" ... update", key, etag)
 		cat.Update(bucket, key, etag)
 	}
 

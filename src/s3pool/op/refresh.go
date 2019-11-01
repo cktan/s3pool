@@ -31,6 +31,10 @@ func Refresh(args []string) (string, error) {
 	key := make([]string, 0, 100)
 	etag := make([]string, 0, 100)
 	save := func(k, t string) {
+		if k[len(k)-1] == '/' {
+			// skip DIR
+			return
+		}
 		key = append(key, k)
 		etag = append(etag, t)
 	}

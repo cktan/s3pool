@@ -15,6 +15,7 @@ package op
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"s3pool/cat"
@@ -96,7 +97,8 @@ func checkCatalog(bucket string) error {
 		return nil
 	}
 
-	// Refresh() will (re)create it 
+	// Refresh() will (re)create it
+	log.Println("Refresh due to missing catalog")
 	_, err = Refresh([]string{bucket})
 	return err
 }
