@@ -49,6 +49,8 @@ var Port int
 var HomeDir string
 var NoDaemon bool
 var DaemonPrep bool
+var PidFile string
+
 var BucketmonChannel chan<- string
 
 func checkdirs() {
@@ -73,7 +75,12 @@ func serve(c *tcp_server.Client, request string) {
 		c.Send("\n")
 		c.Send(reply)
 		// log the request/response
-		log.Printf("%s [%s, %d bytes, %d ms]\n", request, status, len(reply), elapsed/1000)
+		errstr := ""
+		if status == "ERROR" {
+			errstr = "..." + reply + "\n"
+		}
+		log.Printf("%s [%s, %d bytes, %d ms]\n%s",
+			request, status, len(reply), elapsed, errstr)
 	}
 
 	startTime := time.Now()
@@ -83,7 +90,7 @@ func serve(c *tcp_server.Client, request string) {
 	// when the function finishes, send a reply and log the request
 	defer func() {
 		endTime := time.Now()
-		elapsed := int(endTime.Sub(startTime) / 1000)
+		elapsed := int(endTime.Sub(startTime) / time.Millisecond)
 		if err != nil {
 			sendReply("ERROR", err.Error(), elapsed)
 		} else {
@@ -136,6 +143,7 @@ func parseArgs() error {
 	dirPtr := flag.String("D", "", "home directory")
 	noDaemonPtr := flag.Bool("n", false, "do not run as daemon")
 	daemonPrepPtr := flag.Bool("daemonprep", false, "internal, do not use")
+	pidFilePtr := flag.String("pidfile", "", "store pid in this path")
 
 	flag.Parse()
 
@@ -146,6 +154,7 @@ func parseArgs() error {
 	Port = *portPtr
 	HomeDir = *dirPtr
 	NoDaemon = *noDaemonPtr
+	PidFile = *pidFilePtr
 	DaemonPrep = *daemonPrepPtr
 	if !(0 < Port && Port <= 65535) {
 		return errors.New("Missing or invalid port number")
@@ -200,7 +209,10 @@ func main() {
 	log.Println("Starting:", os.Args)
 
 	// setup and check pid file
-	pidfile.SetFname(fmt.Sprintf("s3pool.%d.pid", Port))
+	if PidFile == "" {
+		PidFile = fmt.Sprintf("s3pool.%d.pid", Port)
+	}
+	pidfile.SetFname(PidFile)
 	if pidfile.IsRunning() {
 		exit("Error: another s3pool is running")
 	}
