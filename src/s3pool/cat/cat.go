@@ -2,7 +2,6 @@ package cat
 
 import (
 	"log"
-	"time"
 )
 
 var bm = newBucketMap()
@@ -13,16 +12,8 @@ func KnownBuckets() []string {
 }
 
 func Exists(bucket string) bool {
-	km, ok := bm.Get(bucket)
-	if !ok {
-		return false
-	}
-
-	km.RLock()
-	exp := km.Expires
-	km.RUnlock()
-
-	return time.Now().Before(exp)
+	_, ok := bm.Get(bucket)
+	return ok
 }
 
 func Find(bucket, key string) (etag string) {
@@ -93,9 +84,5 @@ func Store(bucket string, key, etag []string) {
 	for i := range key {
 		km.Map[key[i]] = etag[i]
 	}
-
-	// Set Expiration to 15 minutes later
-	km.Expires = time.Now().Add(time.Duration(15) * time.Minute)
-
 	bm.Put(bucket, km)
 }

@@ -53,8 +53,8 @@ func diskUsage() (used, total int64, pct int) {
 }
 
 func deleteSomeFiles() {
-	// use *find* command to get 5 least-recently-used files under the data/ directory
-	script := `find ./data/ -type f -printf "%AY%Am%Ad %AT %p\n" | sort 2> /dev/null | head -5`
+	// use *find* command to get 10 least-recently-used files under the data/ directory
+	script := `find ./data/ -type f -printf "%AY%Am%Ad %AT %p\n" | sort 2> /dev/null | head -10`
 	cmd := exec.Command("bash", "-c", script)
 	out, err := cmd.Output()
 	if err != nil {
@@ -77,16 +77,17 @@ func deleteSomeFiles() {
 }
 
 const HWM = 90
-const LWM = 80
+const LWM = 75
 
 func Diskmon() {
+	const REFRESHINTERVAL = 5 // minutes
 
 	for {
 		used, total, pct := diskUsage()
 
 		if pct < HWM {
 			log.Printf("diskmon: %d out of %d bytes or %d%% -- skip cleanup\n", used, total, pct)
-			time.Sleep(30 * time.Second)
+			time.Sleep(REFRESHINTERVAL * time.Minute)
 			continue
 		}
 

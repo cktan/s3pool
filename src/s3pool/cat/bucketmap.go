@@ -2,13 +2,11 @@ package cat
 
 import (
 	"sync"
-	"time"
 )
 
 type KeyMap struct {
 	sync.RWMutex
-	Expires time.Time
-	Map     map[string]string // key to etag
+	Map map[string]string // key to etag
 }
 
 type BucketMap struct {

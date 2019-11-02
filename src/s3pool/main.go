@@ -49,6 +49,7 @@ var Port int
 var HomeDir string
 var NoDaemon bool
 var DaemonPrep bool
+var BucketmonChannel chan<- string
 
 func checkdirs() {
 	// create the log, tmp and data directories
@@ -107,12 +108,24 @@ func serve(c *tcp_server.Client, request string) {
 	switch cmd {
 	case "PULL":
 		reply, err = op.Pull(args[1:])
+		if err != nil {
+			BucketmonChannel <- args[1]
+		}
 	case "GLOB":
 		reply, err = op.Glob(args[1:])
+		if err != nil {
+			BucketmonChannel <- args[1]
+		}
 	case "REFRESH":
 		reply, err = op.Refresh(args[1:])
+		if err != nil {
+			BucketmonChannel <- args[1]
+		}
 	case "PUSH":
 		reply, err = op.Push(args[1:])
+		if err != nil {
+			BucketmonChannel <- args[1]
+		}
 	default:
 		err = errors.New("Bad command: " + cmd)
 	}
@@ -216,6 +229,9 @@ func main() {
 
 	// start pidfile monitor
 	go mon.Pidmon()
+
+	// start Bucket monitor
+	BucketmonChannel = mon.Bucketmon()
 
 	// start server, keep serving
 	server := tcp_server.New(fmt.Sprintf("localhost:%d", Port), serve)
