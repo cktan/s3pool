@@ -204,6 +204,11 @@ char* s3pool_pull_ex(int port, const char* bucket,
 	int fd = -1;
 	const char* argv[2+nkey];
 
+	if (! (nkey > 0)) {
+		snprintf(errmsg, errmsgsz, "s3pool_pull_ex: nkey must be > 0");
+		return 0;
+	}
+
 	argv[0] = "PULL";
 	argv[1] = bucket;
 	for (int i = 0; i < nkey; i++)

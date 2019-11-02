@@ -52,28 +52,32 @@ func s3ListObjects(bucket string, notify func(key, etag string)) error {
 	for scanner.Scan() {
 		s := scanner.Text()
 		// Parse s of the form
+		//   {
 		//       "Key" : "key value"
 		//       "ETag" : "\"etag\""
+		//   }
+		// Note: the order of Key and ETag is random.
 		nv := strings.SplitN(s, ":", 2)
-
 		if len(nv) != 2 {
-			key = ""
-			etag = ""
+			// reset if not a key value
+			key, etag = "", ""
 			continue
 		}
+
+		// extract key value
 		name := strings.Trim(nv[0], " \t\",")
 		value := strings.Trim(nv[1], " \t\",\\")
-
-		if name == "Key" {
+		switch name {
+		case "Key":
 			key = value
-		} else if name == "ETag" {
+		case "ETag":
 			etag = value
 		}
 
+		// if both filled, we have a record
 		if key != "" && etag != "" {
 			notify(key, etag)
 			key, etag = "", ""
-
 		}
 	}
 	if err = scanner.Err(); err != nil {
@@ -149,6 +153,7 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 	}
 
 	if trace_s3api {
+		log.Println(" ... cache miss:", key)
 		if catetag == "" {
 			log.Println(" ... missing catalog entry")
 		}
@@ -176,7 +181,9 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 	notModified := strings.Contains(errstr, "Not Modified") && strings.Contains(errstr, "(304)")
 	if notModified {
 		// File was cached and was not modified at source
-		//log.Println(" ... file not modified")
+		if trace_s3api {
+			log.Println(" ... file not modified")
+		}
 		//log.Println("   ... etag", etag)
 		//log.Println("   ... catetag", catetag)
 		if etag != catetag && etag != "" {
@@ -184,6 +191,10 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 			cat.Update(bucket, key, etag)
 		}
 		return path, nil
+	}
+	noSuchKey := strings.Contains(errstr, "NoSuchKey")
+	if noSuchKey {
+		cat.Delete(bucket, key)
 	}
 	if err != nil {
 		return "", fmt.Errorf("aws s3api get-object failed -- %s", errstr)
