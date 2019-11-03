@@ -20,7 +20,11 @@ import (
 const _MAXWORKER = 20
 
 func pmap(processitem func(idx int), maxidx int, maxworker int) {
-	fin := make(chan int)
+	// notified when a go routine is done
+	// must have maxidx reserved to avoid potential race
+	fin := make(chan int, maxidx) 
+
+	// the gate - controls #concurrent go routines at any time
 	gate := make(chan int, maxworker)
 	defer close(fin)
 	defer close(gate)
