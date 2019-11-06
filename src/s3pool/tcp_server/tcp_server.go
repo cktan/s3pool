@@ -14,7 +14,6 @@ package tcp_server
 
 import (
 	"bufio"
-	"crypto/tls"
 	"log"
 	"net"
 	"os/signal"
@@ -32,7 +31,7 @@ type Client struct {
 // TCP server
 type server struct {
 	address  string // Address to open connection: localhost:9999
-	config   *tls.Config
+	listener net.Listener
 	callback func(c *Client, message string)
 }
 
@@ -69,21 +68,10 @@ func (c *Client) Close() error {
 func (s *server) Loop() error {
 	// ignore sigpipe
 	signal.Ignore(syscall.SIGPIPE)
-
-	var listener net.Listener
-	var err error
-	if s.config == nil {
-		listener, err = net.Listen("tcp", s.address)
-	} else {
-		listener, err = tls.Listen("tcp", s.address, s.config)
-	}
-	if err != nil {
-		return err
-	}
-	defer listener.Close()
+	defer s.listener.Close()
 
 	for {
-		conn, _ := listener.Accept()
+		conn, _ := s.listener.Accept()
 		//syscall.SetsockoptInt(conn, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
 		client := &Client{
 			conn:   conn,
@@ -95,31 +83,17 @@ func (s *server) Loop() error {
 }
 
 // Creates new tcp server instance
-func New(address string, callback func(c *Client, message string)) *server {
+func New(address string, callback func(c *Client, message string)) (*server, error)  {
 	log.Println("Starting server at", address)
 	server := &server{
 		address: address,
-		config:  nil,
 	}
-
 	server.callback = callback
-
-	return server
-}
-
-func NewWithTLS(address string, certFile string, keyFile string,
-	callback func(c *Client, message string)) *server {
-	log.Println("Starting server at", address)
-	cert, _ := tls.LoadX509KeyPair(certFile, keyFile)
-	config := tls.Config{
-		Certificates: []tls.Certificate{cert},
-	}
-	server := &server{
-		address: address,
-		config:  &config,
+	listener, err := net.Listen("tcp", server.address)
+	if err != nil {
+		return nil, err
 	}
 
-	server.callback = callback
-
-	return server
+	server.listener = listener
+	return server, nil
 }

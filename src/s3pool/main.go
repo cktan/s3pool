@@ -246,8 +246,11 @@ func main() {
 	BucketmonChannel = mon.Bucketmon()
 
 	// start server, keep serving
-	server := tcp_server.New(fmt.Sprintf("localhost:%d", Port), serve)
+	server, err := tcp_server.New(fmt.Sprintf("0.0.0.0:%d", Port), serve)
+	if err != nil {
+		log.Fatal("Listen() failed - %v", err);
+	}
 	if err := server.Loop(); err != nil {
-		log.Fatal("Listen() failed - %v", err)
+		log.Fatal("Loop() failed - %v", err)
 	}
 }
