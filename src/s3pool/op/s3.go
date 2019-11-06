@@ -227,6 +227,10 @@ func s3PutObject(bucket, key, fname string) error {
 		log.Println("s3 put-object", bucket, key, fname)
 	}
 
+	if len(fname) > 0 && fname[0] != '/' {
+		return fmt.Errorf("Filename parameter must be an absolute path")
+	}
+
 	// lock to serialize on (bucket,key)
 	lockname, err := strlock.Lock(bucket + ":" + key)
 	if err != nil {

@@ -14,6 +14,7 @@ package op
 
 import (
 	"errors"
+	"fmt"
 )
 
 func Push(args []string) (string, error) {
@@ -21,6 +22,9 @@ func Push(args []string) (string, error) {
 		return "", errors.New("Expected 3 arguments for PUSH")
 	}
 	bucket, key, path := args[0], args[1], args[2]
+	if len(path) > 0 && path[0] != '/' {
+		return "", fmt.Errorf("Path parameter must be an absolute path")
+	}
 	if err := checkCatalog(bucket); err != nil {
 		return "", err
 	}
