@@ -71,12 +71,15 @@ func checkdirs() {
 func serve(c *tcp_server.Client, request string) {
 
 	sendReply := func(status, reply string, elapsed int) {
+		// send network reply
 		c.Send(status)
 		c.Send("\n")
 		c.Send(reply)
+
 		// log the request/response
 		errstr := ""
 		if status == "ERROR" {
+			// for errors, we also want to log the error str
 			errstr = "..." + reply + "\n"
 		}
 		log.Printf("%s [%s, %d bytes, %d ms]\n%s",
@@ -91,11 +94,12 @@ func serve(c *tcp_server.Client, request string) {
 	defer func() {
 		endTime := time.Now()
 		elapsed := int(endTime.Sub(startTime) / time.Millisecond)
+		status := "OK"
 		if err != nil {
-			sendReply("ERROR", err.Error(), elapsed)
-		} else {
-			sendReply("OK", reply, elapsed)
+			status = "ERROR"
+			reply = err.Error()
 		}
+		sendReply(status, reply, elapsed)
 	}()
 
 	// extract cmd, args from the request
@@ -245,12 +249,15 @@ func main() {
 	// start Bucket monitor
 	BucketmonChannel = mon.Bucketmon()
 
-	// start server, keep serving
+	// start server
 	server, err := tcp_server.New(fmt.Sprintf("0.0.0.0:%d", Port), serve)
 	if err != nil {
-		log.Fatal("Listen() failed - %v", err);
+		log.Fatal("Listen() failed - %v", err)
 	}
-	if err := server.Loop(); err != nil {
+
+	// keep serving
+	err = server.Loop()
+	if err != nil {
 		log.Fatal("Loop() failed - %v", err)
 	}
 }

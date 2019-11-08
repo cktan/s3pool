@@ -38,7 +38,7 @@ type server struct {
 // Read client data from channel
 func (c *Client) accepted() {
 	defer c.conn.Close()
-	c.conn.SetReadDeadline(time.Now().Add(time.Second))
+	c.conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 	reader := bufio.NewReader(c.conn)
 	req, _ := reader.ReadString('\n')
 	req = strings.Trim(req, " \n\t\r")
@@ -83,7 +83,7 @@ func (s *server) Loop() error {
 }
 
 // Creates new tcp server instance
-func New(address string, callback func(c *Client, message string)) (*server, error)  {
+func New(address string, callback func(c *Client, message string)) (*server, error) {
 	log.Println("Starting server at", address)
 	server := &server{
 		address: address,
