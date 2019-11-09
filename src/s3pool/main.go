@@ -8,7 +8,7 @@
  *  or under a commercial license. The commercial license does not
  *  cover derived or ported versions created by third parties under
  *  GPL. To inquire about commercial license, please send email to
- *  cktan@gmail.com.
+ *  cktanx@gmail.com.
  */
 package main
 
@@ -50,6 +50,8 @@ var HomeDir string
 var NoDaemon bool
 var DaemonPrep bool
 var PidFile string
+var MasterHost string
+var StandbyHost string
 
 var BucketmonChannel chan<- string
 
@@ -127,6 +129,11 @@ func serve(c *tcp_server.Client, request string) {
 		if err != nil {
 			BucketmonChannel <- args[1]
 		}
+	case "GLOBX":
+		reply, err = op.GlobX(args[1:])
+		if err != nil {
+			BucketmonChannel <- args[1]
+		}
 	case "REFRESH":
 		reply, err = op.Refresh(args[1:])
 		if err != nil {
@@ -148,6 +155,8 @@ func parseArgs() error {
 	noDaemonPtr := flag.Bool("n", false, "do not run as daemon")
 	daemonPrepPtr := flag.Bool("daemonprep", false, "internal, do not use")
 	pidFilePtr := flag.String("pidfile", "", "store pid in this path")
+	masterHostPtr := flag.String("M", "", "master host for glob")
+	standbyHostPtr := flag.String("m", "", "standby host for glob")
 
 	flag.Parse()
 
@@ -160,11 +169,18 @@ func parseArgs() error {
 	NoDaemon = *noDaemonPtr
 	PidFile = *pidFilePtr
 	DaemonPrep = *daemonPrepPtr
+	MasterHost = *masterHostPtr
+	StandbyHost = *standbyHostPtr
+
 	if !(0 < Port && Port <= 65535) {
 		return errors.New("Missing or invalid port number")
 	}
 	if "" == HomeDir {
 		return errors.New("Missing or invalid home directory path")
+	}
+	if "" == MasterHost {
+		// meaningless to have standbyhost without masterhost
+		StandbyHost = ""
 	}
 
 	return nil
