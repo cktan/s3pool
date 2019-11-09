@@ -144,6 +144,8 @@ func serve(c *tcp_server.Client, request string) {
 		if err != nil {
 			BucketmonChannel <- args[1]
 		}
+	case "PING":
+		reply, err = op.Ping(args[1:])
 	default:
 		err = errors.New("Bad command: " + cmd)
 	}
