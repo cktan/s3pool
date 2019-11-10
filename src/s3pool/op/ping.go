@@ -10,22 +10,16 @@
  *  GPL. To inquire about commercial license, please send email to
  *  cktanx@gmail.com.
  */
-package mon
+package op
 
 import (
-	"log"
-	"os"
-	"s3pool/pidfile"
 	"time"
 )
 
-func Pidmon() {
-	for {
-		pid := pidfile.Read()
-		if pid != os.Getpid() {
-			log.Println("pidfile has changed. s3pool exiting ...")
-			os.Exit(0)
-		}
-		time.Sleep(60 * time.Second)
-	}
+var since = time.Now()
+
+
+func Ping(args []string) (string, error) {
+	reply := "Up since " + since.Format("2006-01-02 3:4:5 pm")
+	return reply, nil
 }

@@ -8,7 +8,7 @@
  *  or under a commercial license. The commercial license does not
  *  cover derived or ported versions created by third parties under
  *  GPL. To inquire about commercial license, please send email to
- *  cktan@gmail.com.
+ *  cktanx@gmail.com.
  */
 package mon
 
