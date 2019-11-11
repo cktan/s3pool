@@ -2,11 +2,14 @@ package cat
 
 import (
 	"sync"
+	"time"
 )
 
 type KeyMap struct {
 	sync.RWMutex
-	Map map[string]string // key to etag
+	Map *map[string]string // key to etag
+	ExpireAt time.Time
+	Refreshing bool
 }
 
 type BucketMap struct {
@@ -35,10 +38,21 @@ func (bm *BucketMap) Get(bucket string) (result *KeyMap, ok bool) {
 	return
 }
 
-func (bm *BucketMap) Put(bucket string, keymap *KeyMap) {
+func (bm *BucketMap) Put(bucket string, key2etag *map[string]string) {
 	bm.Lock()
-	bm.Map[bucket] = keymap
+	km, ok := bm.Map[bucket]
+	if !ok {
+		// even though we will assign to km.Map again later,
+		// it is better to also do it here to ensure that
+		// km.Map is never nil
+		km := &KeyMap{Map: key2etag}
+		bm.Map[bucket] = km
+	}
 	bm.Unlock()
+
+	km.Lock()
+	km.Map = key2etag
+	km.Unlock()
 }
 
 func (bm *BucketMap) Delete(bucket string) {

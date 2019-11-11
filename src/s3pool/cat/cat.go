@@ -2,6 +2,7 @@ package cat
 
 import (
 	"log"
+	"time"
 )
 
 var bm = newBucketMap()
@@ -12,7 +13,27 @@ func KnownBuckets() []string {
 }
 
 func Exists(bucket string) bool {
-	_, ok := bm.Get(bucket)
+	km, ok := bm.Get(bucket)
+	if !ok {
+		return false
+	}
+
+	launchJob := false
+	now := time.Now()
+	km.Lock()
+	if km.ExpireAt.Before(now) {
+		if !km.Refreshing {
+			km.Refreshing = true
+			launchJob = true
+		}
+		km.ExpireAt = now.Add(15 * time.Minute)
+	}
+	km.Unlock()
+
+	if launchJob {
+		// TODO
+		// Launch a job to do the refresh
+	}
 	return ok
 }
 
@@ -26,7 +47,7 @@ func Find(bucket, key string) (etag string) {
 	km, ok := bm.Get(bucket)
 	if ok {
 		km.RLock()
-		etag, ok = km.Map[key]
+		etag, ok = (*km.Map)[key]
 		km.RUnlock()
 	}
 	return
@@ -39,7 +60,7 @@ func Update(bucket, key, etag string) {
 	km, ok := bm.Get(bucket)
 	if ok {
 		km.Lock()
-		km.Map[key] = etag
+		(*km.Map)[key] = etag
 		km.Unlock()
 	}
 }
@@ -51,7 +72,7 @@ func Delete(bucket, key string) {
 	km, ok := bm.Get(bucket)
 	if ok {
 		km.Lock()
-		delete(km.Map, key)
+		delete((*km.Map), key)
 		km.Unlock()
 	}
 }
@@ -67,7 +88,7 @@ func Scan(bucket string, filter func(string) bool) (key []string) {
 	}
 
 	km.RLock()
-	for kkk := range km.Map {
+	for kkk := range (*km.Map) {
 		if filter(kkk) {
 			key = append(key, kkk)
 		}
@@ -80,9 +101,9 @@ func Store(bucket string, key, etag []string) {
 	if trace {
 		log.Println("Catalog.Store", bucket)
 	}
-	km := &KeyMap{Map: make(map[string]string)}
+	key2etag := make(map[string]string)
 	for i := range key {
-		km.Map[key[i]] = etag[i]
+		key2etag[key[i]] = etag[i]
 	}
-	bm.Put(bucket, km)
+	bm.Put(bucket, &key2etag)
 }

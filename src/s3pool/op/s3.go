@@ -209,11 +209,13 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 	ioutil.WriteFile(metapath, outbuf.Bytes(), 0644)
 
 	// Update catalog with the new etag
+	/*
 	etag = extractETag(metapath)
 	if etag != "" {
 		//log.Println(" ... update", key, etag)
 		cat.Update(bucket, key, etag)
 	}
+        */
 
 	// Done!
 	return path, nil

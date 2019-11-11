@@ -15,11 +15,8 @@ package op
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
-	"s3pool/cat"
-	"s3pool/strlock"
 	"strings"
 	"syscall"
 	"time"
@@ -83,6 +80,7 @@ func moveFile(src, dst string) error {
 }
 
 // Check that we have a catalog on bucket. If not, create it.
+/*
 func checkCatalog(bucket string) error {
 
 	// serialize check catalog on bucket to prevent
@@ -102,3 +100,4 @@ func checkCatalog(bucket string) error {
 	_, err = Refresh([]string{bucket})
 	return err
 }
+*/
