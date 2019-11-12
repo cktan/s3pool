@@ -8,7 +8,7 @@
  *  or under a commercial license. The commercial license does not
  *  cover derived or ported versions created by third parties under
  *  GPL. To inquire about commercial license, please send email to
- *  cktanx@gmail.com.
+ *  cktan@gmail.com.
  */
 package op
 
@@ -19,15 +19,7 @@ import (
 	"strings"
 )
 
-
-
-
 func Glob(args []string) (string, error) {
-	return GlobX(args)
-}
-
-
-func GlobX(args []string) (string, error) {
 	var err error
 
 	if len(args) != 2 {
