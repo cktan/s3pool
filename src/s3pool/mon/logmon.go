@@ -51,7 +51,7 @@ func checklog() {
 		logfp = nextfp
 		logfname = fname
 
-		redirectStderr(fmt.Sprintf("%s-%04d%02d%02d.stderr", logprefix, tm.Year(), tm.Month(), tm.Day()))
+		redirectStderr(fmt.Sprintf("%s-stderr.log", logprefix))
 	}
 }
 

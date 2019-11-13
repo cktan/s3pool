@@ -39,10 +39,10 @@ func (bm *BucketMap) Put(bucket string, key2etag *map[string]string) {
 	bm.Lock()
 	km := bm.Map[bucket]
 	if km == nil {
-		km := &KeyMap{Map: key2etag}
+		km = &KeyMap{Map: key2etag}
 		// even though we will assign to km.Map again later,
 		// it is better to also do it here to ensure that
-		// km.Map is never nil
+		// km.Map is never nil to avoid potential race
 		km.Map = key2etag
 		bm.Map[bucket] = km
 	}

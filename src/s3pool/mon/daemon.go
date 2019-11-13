@@ -26,8 +26,11 @@ func redirectFd() {
 	syscall.Close(1)
 	syscall.Dup(0)
 
-	syscall.Close(2)
-	syscall.Dup(0)
+	if false {
+		// do not close stderr; Golang panic() output always goes there
+		syscall.Close(2)
+		syscall.Dup(0)
+	}
 }
 
 // Daemonize will be called twice in two different processes
