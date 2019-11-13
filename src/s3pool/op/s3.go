@@ -268,7 +268,7 @@ func s3PutObject(bucket, key, fname string) error {
 	cmd.Stderr = &errbuf
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("aws s3api put-object failed -- %s", string(errbuf.Bytes()))
+		return fmt.Errorf("aws s3api put-object failed -- %s", errbuf.String())
 	}
 
 	// reflect the new file in our catalog
