@@ -61,8 +61,10 @@ func SetLogPrefix(s string) {
 }
 
 func Logmon() {
-	for {
-		checklog()
-		time.Sleep(60 * time.Second)
-	}
+	go func() {
+		for {
+			checklog()
+			time.Sleep(60 * time.Second)
+		}
+	}()
 }

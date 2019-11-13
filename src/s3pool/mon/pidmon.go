@@ -20,12 +20,14 @@ import (
 )
 
 func Pidmon() {
-	for {
-		pid := pidfile.Read()
-		if pid != os.Getpid() {
-			log.Println("pidfile has changed. s3pool exiting ...")
-			os.Exit(0)
+	go func() {
+		for {
+			pid := pidfile.Read()
+			if pid != os.Getpid() {
+				log.Println("pidfile has changed. s3pool exiting ...")
+				os.Exit(0)
+			}
+			time.Sleep(60 * time.Second)
 		}
-		time.Sleep(60 * time.Second)
-	}
+	}()
 }

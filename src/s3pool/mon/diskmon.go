@@ -82,19 +82,21 @@ const LWM = 75
 func Diskmon() {
 	const REFRESHINTERVAL = 5 // minutes
 
-	for {
-		used, total, pct := diskUsage()
+	go func() {
+		for {
+			used, total, pct := diskUsage()
 
-		if pct < HWM {
-			log.Printf("diskmon: %d out of %d bytes or %d%% -- skip cleanup\n", used, total, pct)
-			time.Sleep(REFRESHINTERVAL * time.Minute)
-			continue
-		}
+			if pct < HWM {
+				log.Printf("diskmon: %d out of %d bytes or %d%% -- skip cleanup\n", used, total, pct)
+				time.Sleep(REFRESHINTERVAL * time.Minute)
+				continue
+			}
 
-		for pct > LWM {
-			log.Printf("diskmon: %d out of %d bytes or %d%% -- commencing cleanup\n", used, total, pct)
-			deleteSomeFiles()
-			used, total, pct = diskUsage()
+			for pct > LWM {
+				log.Printf("diskmon: %d out of %d bytes or %d%% -- commencing cleanup\n", used, total, pct)
+				deleteSomeFiles()
+				used, total, pct = diskUsage()
+			}
 		}
-	}
+	}()
 }

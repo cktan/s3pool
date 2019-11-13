@@ -18,9 +18,12 @@ import (
 	"time"
 )
 
-func Bucketmon() chan<- string {
+var NotifyBucketmon chan<- string
+
+func Bucketmon() {
 	const REFRESHINTERVAL = 15 // minutes
 	ch := make(chan string, 10)
+	NotifyBucketmon = ch
 
 	go func() {
 		tick := time.Tick(REFRESHINTERVAL * time.Minute)
@@ -40,6 +43,4 @@ func Bucketmon() chan<- string {
 			}
 		}
 	}()
-
-	return ch
 }

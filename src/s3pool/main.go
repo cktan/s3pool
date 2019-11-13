@@ -45,14 +45,6 @@ func checkawscli() bool {
 	return err == nil
 }
 
-var Port int
-var HomeDir string
-var NoDaemon bool
-var DaemonPrep bool
-var PidFile string
-
-var BucketmonChannel chan<- string
-
 func checkdirs() {
 	// create the log, tmp and data directories
 	mkdirall := func(dir string) {
@@ -111,68 +103,69 @@ func serve(c *tcp_server.Client, request string) {
 	}
 
 	var cmd string
+	var cmdargs []string
 	if len(args) >= 1 {
 		cmd = args[0]
+		cmdargs = args[1:]
 	}
 
 	// dispatch cmd
 	switch cmd {
 	case "PULL":
-		reply, err = op.Pull(args[1:])
-		if err != nil {
-			BucketmonChannel <- args[1]
-		}
+		reply, err = op.Pull(cmdargs)
 	case "GLOB":
-		reply, err = op.Glob(args[1:])
+		reply, err = op.Glob(cmdargs)
 		if err != nil {
-			BucketmonChannel <- args[1]
+			mon.NotifyBucketmon <- cmdargs[0]
 		}
 	case "GLOBX":
-		reply, err = op.Globx(args[1:])
+		reply, err = op.Globx(cmdargs)
 		if err != nil {
-			BucketmonChannel <- args[1]
+			mon.NotifyBucketmon <- cmdargs[0]
 		}
 	case "REFRESH":
-		reply, err = op.Refresh(args[1:])
-		if err != nil {
-			BucketmonChannel <- args[1]
-		}
+		reply, err = op.Refresh(cmdargs)
 	case "PUSH":
-		reply, err = op.Push(args[1:])
-		if err != nil {
-			BucketmonChannel <- args[1]
-		}
+		reply, err = op.Push(cmdargs)
+	case "SET":
+		reply, err = op.Set(cmdargs)
 	default:
 		err = errors.New("Bad command: " + cmd)
 	}
 }
 
-func parseArgs() error {
-	portPtr := flag.Int("p", 0, "port number")
-	dirPtr := flag.String("D", "", "home directory")
-	noDaemonPtr := flag.Bool("n", false, "do not run as daemon")
-	daemonPrepPtr := flag.Bool("daemonprep", false, "internal, do not use")
-	pidFilePtr := flag.String("pidfile", "", "store pid in this path")
+type progArgs struct {
+	port       *int
+	dir        *string
+	noDaemon   *bool
+	daemonPrep *bool
+	pidFile    *string
+}
+
+func parseArgs() (p progArgs, err error) {
+	p.port = flag.Int("p", 0, "port number")
+	p.dir = flag.String("D", "", "home directory")
+	p.noDaemon = flag.Bool("n", false, "do not run as daemon")
+	p.daemonPrep = flag.Bool("daemonprep", false, "internal, do not use")
+	p.pidFile = flag.String("pidfile", "", "store pid in this path")
 
 	flag.Parse()
 
 	if len(flag.Args()) != 0 {
-		return errors.New("Extra arguments")
+		err = errors.New("Extra arguments")
+		return
 	}
 
-	Port = *portPtr
-	HomeDir = *dirPtr
-	NoDaemon = *noDaemonPtr
-	PidFile = *pidFilePtr
-	DaemonPrep = *daemonPrepPtr
-	if !(0 < Port && Port <= 65535) {
-		return errors.New("Missing or invalid port number")
+	if !(0 < *p.port && *p.port <= 65535) {
+		err = errors.New("Missing or invalid port number")
+		return
 	}
-	if "" == HomeDir {
-		return errors.New("Missing or invalid home directory path")
+	if "" == *p.dir {
+		err = errors.New("Missing or invalid home directory path")
+		return
 	}
 
-	return nil
+	return
 }
 
 func exit(msg string) {
@@ -182,6 +175,7 @@ func exit(msg string) {
 }
 
 func boot() {
+	// for debug only
 	f, err := os.OpenFile("/tmp/text.log",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -201,12 +195,13 @@ func main() {
 	}
 
 	// check flags
-	if err := parseArgs(); err != nil {
+	p, err := parseArgs()
+	if err != nil {
 		exit(err.Error())
 	}
 
 	// get into the home dir
-	if err := os.Chdir(HomeDir); err != nil {
+	if err := os.Chdir(*p.dir); err != nil {
 		exit(err.Error())
 	}
 
@@ -218,16 +213,17 @@ func main() {
 	log.Println("Starting:", os.Args)
 
 	// setup and check pid file
-	if PidFile == "" {
-		PidFile = fmt.Sprintf("s3pool.%d.pid", Port)
+	if *p.pidFile == "" {
+		s := fmt.Sprintf("s3pool.%d.pid", *p.port)
+		p.pidFile = &s
 	}
-	pidfile.SetFname(PidFile)
+	pidfile.SetFname(*p.pidFile)
 	if pidfile.IsRunning() {
 		exit("Error: another s3pool is running")
 	}
 
 	// Run as daemon?
-	if !NoDaemon {
+	if !(*p.noDaemon) {
 		// prepare the argv.
 		// We need replace -D homedir with -D . because we have cd into homedir
 		argv := append([]string(nil), os.Args[1:]...)
@@ -236,26 +232,26 @@ func main() {
 				argv[i+1] = "."
 			}
 		}
-		mon.Daemonize(DaemonPrep, argv)
+		mon.Daemonize(*p.daemonPrep, argv)
 	}
 
 	// write pid to pidfile
 	pidfile.Write()
 
 	// start log
-	go mon.Logmon()
+	mon.Logmon()
 
 	// start the disk space monitor
-	go mon.Diskmon()
+	mon.Diskmon()
 
 	// start pidfile monitor
-	go mon.Pidmon()
+	mon.Pidmon()
 
 	// start Bucket monitor
-	BucketmonChannel = mon.Bucketmon()
+	mon.Bucketmon()
 
 	// start server
-	server, err := tcp_server.New(fmt.Sprintf("0.0.0.0:%d", Port), serve)
+	server, err := tcp_server.New(fmt.Sprintf("0.0.0.0:%d", *p.port), serve)
 	if err != nil {
 		log.Fatal("Listen() failed - %v", err)
 	}

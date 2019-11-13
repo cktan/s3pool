@@ -17,7 +17,7 @@ import (
 )
 
 var bm = newBucketMap()
-var trace = false
+var trace bool
 
 func KnownBuckets() []string {
 	return bm.Keys()
