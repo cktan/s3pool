@@ -14,7 +14,10 @@ package op
 
 import (
 	"errors"
+	"log"
 	"s3pool/cat"
+	"s3pool/strlock"
+	"time"
 )
 
 /*
@@ -22,11 +25,28 @@ import (
   2. save the key[] and etag[] to catalog
 */
 func Refresh(args []string) (string, error) {
+
 	if len(args) != 1 {
 		return "", errors.New("expects 1 argument for REFRESH")
 	}
 	bucket := args[0]
 	// DO NOT checkCatalog here. We will update it!
+
+	// serialize refresh on bucket
+	lockname, err := strlock.Lock("refresh " + bucket)
+	if err != nil {
+		return "", err
+	}
+	defer strlock.Unlock(lockname)
+
+	numItems := 0
+	log.Println("REFRESH start on", bucket)
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		elapsed := int(endTime.Sub(startTime) / time.Millisecond)
+		log.Printf("REFRESH fin on %s, %d items, elapsed %d ms\n", bucket, numItems, elapsed)
+	}()
 
 	key := make([]string, 0, 100)
 	etag := make([]string, 0, 100)
@@ -37,6 +57,7 @@ func Refresh(args []string) (string, error) {
 		}
 		key = append(key, k)
 		etag = append(etag, t)
+		numItems++
 	}
 
 	if err := s3ListObjects(bucket, save); err != nil {

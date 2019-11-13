@@ -38,7 +38,7 @@ func Find(bucket, key string) (etag string) {
 	km, ok := bm.Get(bucket)
 	if ok {
 		km.RLock()
-		etag, ok = km.Map[key]
+		etag, ok = (*km.Map)[key]
 		km.RUnlock()
 	}
 	return
@@ -51,7 +51,7 @@ func Update(bucket, key, etag string) {
 	km, ok := bm.Get(bucket)
 	if ok {
 		km.Lock()
-		km.Map[key] = etag
+		(*km.Map)[key] = etag
 		km.Unlock()
 	}
 }
@@ -63,7 +63,7 @@ func Delete(bucket, key string) {
 	km, ok := bm.Get(bucket)
 	if ok {
 		km.Lock()
-		delete(km.Map, key)
+		delete(*km.Map, key)
 		km.Unlock()
 	}
 }
@@ -79,7 +79,7 @@ func Scan(bucket string, filter func(string) bool) (key []string) {
 	}
 
 	km.RLock()
-	for kkk := range km.Map {
+	for kkk := range *km.Map {
 		if filter(kkk) {
 			key = append(key, kkk)
 		}
@@ -92,9 +92,9 @@ func Store(bucket string, key, etag []string) {
 	if trace {
 		log.Println("Catalog.Store", bucket)
 	}
-	km := &KeyMap{Map: make(map[string]string)}
+	dict := make(map[string]string)
 	for i := range key {
-		km.Map[key[i]] = etag[i]
+		dict[key[i]] = etag[i]
 	}
-	bm.Put(bucket, km)
+	bm.Put(bucket, &dict)
 }

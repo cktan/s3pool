@@ -127,6 +127,11 @@ func serve(c *tcp_server.Client, request string) {
 		if err != nil {
 			BucketmonChannel <- args[1]
 		}
+	case "GLOBX":
+		reply, err = op.Globx(args[1:])
+		if err != nil {
+			BucketmonChannel <- args[1]
+		}
 	case "REFRESH":
 		reply, err = op.Refresh(args[1:])
 		if err != nil {

@@ -1,15 +1,3 @@
-/*
- *  S3pool - S3 cache on local disk
- *  Copyright (c) 2019 CK Tan
- *  cktanx@gmail.com
- *
- *  S3Pool can be used for free under the GNU General Public License
- *  version 3, where anything released into public must be open source,
- *  or under a commercial license. The commercial license does not
- *  cover derived or ported versions created by third parties under
- *  GPL. To inquire about commercial license, please send email to
- *  cktanx@gmail.com.
- */
 package cat
 
 import (
@@ -18,7 +6,7 @@ import (
 
 type KeyMap struct {
 	sync.RWMutex
-	Map map[string]string // key to etag
+	Map *map[string]string // key to etag
 }
 
 type BucketMap struct {
@@ -47,10 +35,22 @@ func (bm *BucketMap) Get(bucket string) (result *KeyMap, ok bool) {
 	return
 }
 
-func (bm *BucketMap) Put(bucket string, keymap *KeyMap) {
+func (bm *BucketMap) Put(bucket string, key2etag *map[string]string) {
 	bm.Lock()
-	bm.Map[bucket] = keymap
+	km := bm.Map[bucket]
+	if km == nil {
+		km := &KeyMap{Map: key2etag}
+		// even though we will assign to km.Map again later,
+		// it is better to also do it here to ensure that
+		// km.Map is never nil
+		km.Map = key2etag
+		bm.Map[bucket] = km
+	}
 	bm.Unlock()
+
+	km.Lock()
+	km.Map = key2etag
+	km.Unlock()
 }
 
 func (bm *BucketMap) Delete(bucket string) {
