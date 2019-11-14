@@ -19,11 +19,15 @@ import (
 	"time"
 )
 
-var NotifyBucketmon chan<- string
+var bucketmonCh chan<- string
+
+func NotifyBucketmon(bucket string) {
+	bucketmonCh <- bucket
+}
 
 func Bucketmon() {
 	ch := make(chan string, 10)
-	NotifyBucketmon = ch
+	bucketmonCh = ch
 
 	go func() {
 		countdown := conf.RefreshInterval
