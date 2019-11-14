@@ -14,6 +14,7 @@ package mon
 
 import (
 	"log"
+	"s3pool/conf"
 	"s3pool/op"
 	"time"
 )
@@ -21,24 +22,32 @@ import (
 var NotifyBucketmon chan<- string
 
 func Bucketmon() {
-	const REFRESHINTERVAL = 15 // minutes
 	ch := make(chan string, 10)
 	NotifyBucketmon = ch
 
 	go func() {
-		tick := time.Tick(REFRESHINTERVAL * time.Minute)
+		countdown := conf.RefreshInterval
+		tick := time.Tick(time.Minute)
 		bktmap := make(map[string](bool))
 		for {
 			select {
 			case bkt := <-ch:
+				log.Printf("Bucket notify %s\n", bkt)
 				bktmap[bkt] = true
 			case <-tick:
+				log.Printf("BUCKETMON %d", countdown)
+				countdown--
+				if countdown > 0 {
+					continue
+				}
+				countdown = conf.RefreshInterval
 				for bkt := range bktmap {
-					log.Println("bucketmon refresh", bkt)
+					log.Println("BUCKETMON refresh", bkt)
 					_, err := op.Refresh([]string{bkt})
 					if err != nil {
 						log.Printf("WARNING: autorefresh %s failed: %v\n", bkt, err)
 					}
+					log.Println("BUCKETMON fin", bkt)
 				}
 			}
 		}

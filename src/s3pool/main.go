@@ -115,12 +115,12 @@ func serve(c *tcp_server.Client, request string) {
 		reply, err = op.Pull(cmdargs)
 	case "GLOB":
 		reply, err = op.Glob(cmdargs)
-		if err != nil {
+		if err == nil {
 			mon.NotifyBucketmon <- cmdargs[0]
 		}
 	case "GLOBX":
 		reply, err = op.Globx(cmdargs)
-		if err != nil {
+		if err == nil {
 			mon.NotifyBucketmon <- cmdargs[0]
 		}
 	case "REFRESH":

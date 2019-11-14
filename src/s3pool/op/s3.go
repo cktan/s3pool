@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"s3pool/cat"
+	"s3pool/conf"
 	"s3pool/strlock"
 	"strings"
 )
@@ -36,7 +37,7 @@ type ListCollection struct {
 }
 
 func s3ListObjects(bucket string, notify func(key, etag string)) error {
-	if Verbose > 0 {
+	if conf.Verbose > 0 {
 		log.Println("s3 list-objects", bucket)
 	}
 
@@ -131,7 +132,7 @@ func extractETag(path string) string {
 //   aws s3api get-object --bucket BUCKET --key KEY --if-none-match ETAG tmppath
 //
 func s3GetObject(bucket string, key string, force bool) (string, error) {
-	if Verbose > 0 {
+	if conf.Verbose > 0 {
 		log.Println("s3 get-objects", bucket, key)
 	}
 
@@ -155,13 +156,13 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 
 	// If etag did not change, don't go fetch it
 	if etag != "" && etag == catetag && !force {
-		if Verbose > 0 {
+		if conf.Verbose > 0 {
 			log.Println(" ... cache hit:", key)
 		}
 		return path, nil
 	}
 
-	if Verbose > 0 {
+	if conf.Verbose > 0 {
 		log.Println(" ... cache miss:", key)
 		if catetag == "" {
 			log.Println(" ... missing catalog entry")
@@ -190,7 +191,7 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 	notModified := strings.Contains(errstr, "Not Modified") && strings.Contains(errstr, "(304)")
 	if notModified {
 		// File was cached and was not modified at source
-		if Verbose > 0 {
+		if conf.Verbose > 0 {
 			log.Println(" ... file not modified")
 		}
 		//log.Println("   ... etag", etag)
@@ -232,7 +233,7 @@ func s3GetObject(bucket string, key string, force bool) (string, error) {
 // aws s3api put-object
 //
 func s3PutObject(bucket, key, fname string) error {
-	if Verbose > 0 {
+	if conf.Verbose > 0 {
 		log.Println("s3 put-object", bucket, key, fname)
 	}
 
