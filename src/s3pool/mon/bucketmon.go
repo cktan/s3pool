@@ -59,11 +59,12 @@ func Bucketmon() chan<- string {
 						// separate go routine?
 						log.Println("BUCKETMON refresh", bkt)
 						_, err := op.Refresh([]string{bkt})
+						log.Println("BUCKETMON fin", bkt)
 						if err != nil {
 							log.Printf("WARNING: autorefresh %s failed: %v\n", bkt, err)
 							delete(bktmap, bkt)
+							continue
 						}
-						log.Println("BUCKETMON fin", bkt)
 						bktmap[bkt] = conf.RefreshInterval * 60
 					}
 				}
