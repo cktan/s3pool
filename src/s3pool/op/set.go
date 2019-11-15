@@ -34,7 +34,10 @@ func Set(args []string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		conf.Verbose = i
+		if i < 0 {
+			i = 0 // minimum
+		}
+		conf.VerboseLevel = i
 		return "\n", nil
 	}
 
@@ -43,7 +46,11 @@ func Set(args []string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		if i < 2 {
+			i = 2 // minimum
+		}
 		conf.RefreshInterval = i
+		conf.BucketmonChannel <- ""
 		return "\n", nil
 	}
 

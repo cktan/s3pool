@@ -12,5 +12,14 @@
  */
 package conf
 
-var Verbose int
-var RefreshInterval = 2
+var VerboseLevel = 0
+var RefreshInterval = 15 // in minutes
+var BucketmonChannel chan<- string
+
+func Verbose(level int) bool {
+	return VerboseLevel >= level
+}
+
+func NotifyBucketmon(bkt string) {
+	BucketmonChannel <- bkt
+}

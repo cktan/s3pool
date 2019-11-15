@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"s3pool/conf"
 	"s3pool/mon"
 	"s3pool/op"
 	"s3pool/pidfile"
@@ -116,12 +117,12 @@ func serve(c *tcp_server.Client, request string) {
 	case "GLOB":
 		reply, err = op.Glob(cmdargs)
 		if err == nil {
-			mon.NotifyBucketmon(cmdargs[0])
+			conf.NotifyBucketmon(cmdargs[0])
 		}
 	case "GLOBX":
 		reply, err = op.Globx(cmdargs)
 		if err == nil {
-			mon.NotifyBucketmon(cmdargs[0])
+			conf.NotifyBucketmon(cmdargs[0])
 		}
 	case "REFRESH":
 		reply, err = op.Refresh(cmdargs)
@@ -248,7 +249,7 @@ func main() {
 	mon.Pidmon()
 
 	// start Bucket monitor
-	mon.Bucketmon()
+	conf.BucketmonChannel = mon.Bucketmon()
 
 	// start server
 	server, err := tcp_server.New(fmt.Sprintf("0.0.0.0:%d", *p.port), serve)

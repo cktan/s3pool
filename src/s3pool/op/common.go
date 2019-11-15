@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"s3pool/cat"
+	"s3pool/conf"
 	"strings"
 	"syscall"
 	"time"
@@ -88,8 +89,13 @@ func checkCatalog(bucket string) error {
 		return nil
 	}
 
-	// Refresh() will (re)create it
-	log.Println("Refresh due to missing catalog")
-	_, err := Refresh([]string{bucket})
-	return err
+	// notify bucketmon; it will invoke refresh to create entry in catalog.
+	conf.NotifyBucketmon(bucket)
+
+	// wait and poll cat
+	for !cat.Exists(bucket) {
+		time.Sleep(time.Second)
+	}
+	log.Println("Refreshed due to missing catalog")
+	return nil
 }
