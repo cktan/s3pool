@@ -50,6 +50,7 @@ func Bucketmon() {
 					_, err := op.Refresh([]string{bkt})
 					if err != nil {
 						log.Printf("WARNING: autorefresh %s failed: %v\n", bkt, err)
+						delete(bktmap, bkt)
 					}
 					log.Println("BUCKETMON fin", bkt)
 				}
