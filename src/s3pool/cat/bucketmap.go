@@ -18,6 +18,7 @@ import (
 
 type KeyMap struct {
 	sync.RWMutex
+	err error
 	Map *map[string]string // key to etag
 }
 
@@ -47,21 +48,24 @@ func (bm *BucketMap) Get(bucket string) (result *KeyMap, ok bool) {
 	return
 }
 
-func (bm *BucketMap) Put(bucket string, key2etag *map[string]string) {
+func (bm *BucketMap) Put(bucket string, key2etag *map[string]string, err error) {
 	bm.Lock()
 	km := bm.Map[bucket]
 	if km == nil {
+		// this is a new keymap
 		km = &KeyMap{Map: key2etag}
 		// even though we will assign to km.Map again later,
 		// it is better to also do it here to ensure that
 		// km.Map is never nil to avoid potential race
 		km.Map = key2etag
+		km.err = err
 		bm.Map[bucket] = km
 	}
 	bm.Unlock()
 
 	km.Lock()
 	km.Map = key2etag
+	km.err = err
 	km.Unlock()
 }
 

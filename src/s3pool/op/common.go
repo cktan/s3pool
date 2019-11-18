@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"s3pool/cat"
 	"s3pool/conf"
+	"s3pool/strlock"
 	"strings"
 	"syscall"
 	"time"
@@ -85,17 +86,31 @@ func moveFile(src, dst string) error {
 // Check that we have a catalog on bucket. If not, create it.
 func checkCatalog(bucket string) error {
 
-	if cat.Exists(bucket) {
-		return nil
+	// serialize refresh on bucket
+	lockname, err := strlock.Lock("refresh " + bucket)
+	if err != nil {
+		return err
+	}
+	defer strlock.Unlock(lockname)
+
+	ok, err := cat.Exists(bucket)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		// notify bucketmon; it will invoke refresh to create entry in catalog.
+		conf.NotifyBucketmon(bucket)
+
+		// wait for it
+		for !ok {
+			time.Sleep(time.Second)
+			ok, err = cat.Exists(bucket)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	// notify bucketmon; it will invoke refresh to create entry in catalog.
-	conf.NotifyBucketmon(bucket)
-
-	// wait and poll cat
-	for !cat.Exists(bucket) {
-		time.Sleep(time.Second)
-	}
 	log.Println("Refreshed due to missing catalog")
 	return nil
 }

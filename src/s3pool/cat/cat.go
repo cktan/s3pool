@@ -23,11 +23,6 @@ func KnownBuckets() []string {
 	return bm.Keys()
 }
 
-func Exists(bucket string) bool {
-	_, ok := bm.Get(bucket)
-	return ok
-}
-
 func Find(bucket, key string) (etag string) {
 	// returns etag == "" if not found
 	if trace {
@@ -88,7 +83,7 @@ func Scan(bucket string, filter func(string) bool) (key []string) {
 	return
 }
 
-func Store(bucket string, key, etag []string) {
+func Store(bucket string, key, etag []string, err error) {
 	if trace {
 		log.Println("Catalog.Store", bucket)
 	}
@@ -96,5 +91,17 @@ func Store(bucket string, key, etag []string) {
 	for i := range key {
 		dict[key[i]] = etag[i]
 	}
-	bm.Put(bucket, &dict)
+	bm.Put(bucket, &dict, err)
+}
+
+func Exists(bucket string) (ok bool, err error) {
+	var km *KeyMap
+	km, ok = bm.Get(bucket)
+	if ok {
+		km.Lock()
+		err = km.err
+		km.Unlock()
+	}
+
+	return
 }

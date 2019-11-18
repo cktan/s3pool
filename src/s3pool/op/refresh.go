@@ -15,7 +15,6 @@ package op
 import (
 	"errors"
 	"s3pool/cat"
-	"s3pool/strlock"
 )
 
 /*
@@ -29,13 +28,6 @@ func Refresh(args []string) (string, error) {
 	}
 	bucket := args[0]
 	// DO NOT checkCatalog here. We will update it!
-
-	// serialize refresh on bucket
-	lockname, err := strlock.Lock("refresh " + bucket)
-	if err != nil {
-		return "", err
-	}
-	defer strlock.Unlock(lockname)
 
 	numItems := 0
 	/*
@@ -60,11 +52,12 @@ func Refresh(args []string) (string, error) {
 		numItems++
 	}
 
-	if err := s3ListObjects(bucket, save); err != nil {
+	err := s3ListObjects(bucket, save)
+	cat.Store(bucket, key, etag, err)
+
+	if err != nil {
 		return "", err
 	}
-
-	cat.Store(bucket, key, etag)
 
 	return "\n", nil
 }
