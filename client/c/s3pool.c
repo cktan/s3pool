@@ -151,6 +151,7 @@ static char* chat(int port, const char* request,
 	char* p = reply;
 	char* q = reply + replysz;
 	while (1) {
+		
 		// always keep one extra byte slack for NUL term
 		if (p + 1 >= q) {
 			int newsz = replysz * 1.5;
@@ -160,10 +161,11 @@ static char* chat(int port, const char* request,
 				snprintf(errmsg, errmsgsz, "s3pool read: reply message too big -- out of memory");
 				goto bailout;
 			}
-			p = t + (p - reply);
-			q = t + newsz;
+			int n = p - reply;
 			reply = t;
 			replysz = newsz;
+			p = t + n;
+			q = reply + replysz;
 		}
 
 		assert(p + 1 < q);
