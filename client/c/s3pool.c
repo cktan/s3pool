@@ -79,7 +79,7 @@ static int send_request(int sockfd, const char* request,
 		if (n == -1) {
 			if (errno == EAGAIN) continue;
 			
-			snprintf(errmsg, errmsgsz, "write: %s", strerror(errno));
+			snprintf(errmsg, errmsgsz, "s3pool write: %s", strerror(errno));
 			return -1;
 		}
 			
@@ -101,7 +101,12 @@ static int check_reply(char* reply, char* errmsg, int errmsgsz)
 		return -1;
 	}
 
-	snprintf(errmsg, errmsgsz, "bad message from server");
+	if (*reply == '\0') {
+		snprintf(errmsg, errmsgsz, "empty reply from s3pool");
+		return -1;
+	}
+
+	snprintf(errmsg, errmsgsz, "bad message from s3pool: %s", reply);
 	return -1;
 }
 
