@@ -39,12 +39,13 @@ void fatal(const char* msg)
 }
 
 
-void doit(int port, char* bucket, char* key)
+void doit(int port, char* bucket, char* key[], int nkey)
 {
 	char errmsg[200];
 
-	char* fname = s3pool_pull(port, bucket, key,
-							  errmsg, sizeof(errmsg));
+	char* fname = s3pool_pull_ex(port, bucket,
+								 (const char**) key, nkey,
+								 errmsg, sizeof(errmsg));
 	if (!fname) {
 		fatal(errmsg);
 	}
@@ -82,15 +83,10 @@ int main(int argc, char* argv[])
 	char* bucket = argv[optind++];
 
 	if (optind >= argc) {
-		usage(argv[0], "Need bucket and key");
+		usage(argv[0], "Need key(s)");
 	}
-	char* key = argv[optind++];
 
-	if (optind != argc) {
-		usage(argv[0], "Extra arguments");
-	}
-	
-	doit(port, bucket, key);
+	doit(port, bucket, &argv[optind], argc - optind);
 
 	return 0;
 }

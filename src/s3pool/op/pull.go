@@ -22,36 +22,61 @@ const _MAXWORKER = 20
 /**
  *  Process N items using M go routines
  */
-func pmap(processitem func(n int), N int, M int) {
-	// notified when a go routine is done
-	// must have N reserved to avoid potential race
-	fin := make(chan int, N)
+/**
+ *  Process N items using M go routines
+ */
+func Pmap(processItem func(n int), N int, M int) {
+	if (M > N) {
+		M = N
+	}
 
-	// the gate with M resources - controls #concurrent go routines at any time
-	gate := make(chan int, M)
-	defer close(fin)
-	defer close(gate)
+	var fin chan int
+	var ticket chan int
+	if false {
+		// for debug
+		fin = make(chan int)
+		ticket = make(chan int)
+	} else {
+		fin = make(chan int, 10)
+		ticket = make(chan int, 10)
+	} 
+	defer func() {
+		close(fin)
+		close(ticket)
+	}()
 
-	// let maxworker run
+	// let M go routines run concurrently
 	for i := 0; i < M; i++ {
-		gate <- 1
+		go func() {
+			for {
+				idx := <- ticket
+				if idx == -1 {
+					return
+				}
+				processItem(idx)
+				fin <- idx
+			}
+		}()
 	}
 
-	// launch jobs for workers
-	for i := 0; i < N; i++ {
-		<-gate // wait to launch
-		go func(idx int) {
-			processitem(idx)
-			gate <- 1  // let next guy run
-			fin <- idx // notify done
-		}(i)
-	}
-
+	go func() {
+		// send the jobs
+		for i := 0; i < N; i++ {
+			ticket <- i
+		}
+		// send the terminate signal
+		for i := 0; i < M; i++ {
+			ticket <- -1
+		}
+	}()
+	
 	// wait for all jobs to finish
 	for i := 0; i < N; i++ {
 		<-fin
 	}
+
 }
+
 
 func Pull(args []string) (string, error) {
 	if len(args) < 2 {
@@ -71,7 +96,7 @@ func Pull(args []string) (string, error) {
 		path[i], patherr[i] = s3GetObject(bucket, keys[i], false)
 	}
 
-	pmap(dowork, nkeys, _MAXWORKER)
+	Pmap(dowork, nkeys, _MAXWORKER)
 
 	var reply strings.Builder
 	for i := 0; i < nkeys; i++ {

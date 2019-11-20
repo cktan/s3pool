@@ -154,7 +154,7 @@ static char* chat(int port, const char* request,
 		// always keep one extra byte slack for NUL term
 		if (p + 1 >= q) {
 			int newsz = replysz * 1.5;
-			if (newsz == 0) newsz = 1024;
+			if (newsz == 0) newsz = 10;
 			char* t = realloc(reply, newsz);
 			if (!t) {
 				snprintf(errmsg, errmsgsz, "s3pool read: reply message too big -- out of memory");
@@ -174,10 +174,13 @@ static char* chat(int port, const char* request,
 			snprintf(errmsg, errmsgsz, "s3pool read: %s", strerror(errno));
 			goto bailout;
 		}
-		if (n == 0) break;
-
 		p += n;
 		*p = 0;					/* NUL */
+
+		if (trace) {
+			fprintf(trace, "\nNNN: %s\n", p - n);
+		}
+		if (n == 0) break;
 	}
 
 	close(sockfd);
