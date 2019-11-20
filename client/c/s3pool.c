@@ -115,7 +115,8 @@ static int check_reply(char* reply, char* errmsg, int errmsgsz)
 
 
 static char* chat(int port, const char* request,
-				  char* errmsg, int errmsgsz)
+				  char* errmsg, int errmsgsz,
+				  FILE* trace)
 {
 	int sockfd = -1;
 	struct sockaddr_in servaddr;
@@ -125,7 +126,7 @@ static char* chat(int port, const char* request,
 	// socket create and verification
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd == -1) {
-		snprintf(errmsg, errmsgsz, "socket: %s", strerror(errno));
+		snprintf(errmsg, errmsgsz, "s3pool socket: %s", strerror(errno));
 		goto bailout;
 	}
 	memset(&servaddr, 0, sizeof(servaddr));
@@ -137,7 +138,7 @@ static char* chat(int port, const char* request,
 
 	// connect the client socket to server socket
 	if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
-		snprintf(errmsg, errmsgsz, "connect: %s", strerror(errno));
+		snprintf(errmsg, errmsgsz, "s3pool connect: %s", strerror(errno));
 		goto bailout;
 	}
 
@@ -156,7 +157,7 @@ static char* chat(int port, const char* request,
 			if (newsz == 0) newsz = 1024;
 			char* t = realloc(reply, newsz);
 			if (!t) {
-				snprintf(errmsg, errmsgsz, "read: reply message too big -- out of memory");
+				snprintf(errmsg, errmsgsz, "s3pool read: reply message too big -- out of memory");
 				goto bailout;
 			}
 			p = t + (p - reply);
@@ -170,7 +171,7 @@ static char* chat(int port, const char* request,
 		if (n == -1) {
 			if (errno == EAGAIN) continue;
 
-			snprintf(errmsg, errmsgsz, "read: %s", strerror(errno));
+			snprintf(errmsg, errmsgsz, "s3pool read: %s", strerror(errno));
 			goto bailout;
 		}
 		if (n == 0) break;
@@ -181,13 +182,18 @@ static char* chat(int port, const char* request,
 
 	close(sockfd);
 
+	if (trace) {
+		fprintf(trace, "\nSEND: %s\nRECEIVED: %s\n", request, reply);
+	}
+
 	if (-1 == check_reply(reply, errmsg, errmsgsz)) {
 		goto bailout;
 	}
 
-	char* aptr = strdup(reply+3);
+	/* reply must contain "OK\nPAYLOAD\n" verified by check_reply() above */
+	char* aptr = strdup(reply+3); /* skip to PAYLOAD */
 	if (!aptr) {
-		snprintf(errmsg, errmsgsz, "%s", "out of memory");
+		snprintf(errmsg, errmsgsz, "s3pool: out of memory");
 		goto bailout;
 	}
 
@@ -236,7 +242,11 @@ char* s3pool_pull_ex(int port, const char* bucket,
 		goto bailout;
 	}
 
-	reply = chat(port, request, errmsg, errmsgsz);
+	char fname[100];
+	sprintf(fname, "/tmp/s3pool.%d.log", getpid());
+	FILE* fp = fopen(fname, "a");
+	reply = chat(port, request, errmsg, errmsgsz, fp);
+	fclose(fp);
 	if (! reply) {
 		goto bailout;
 	}
@@ -278,7 +288,7 @@ int s3pool_push(int port, const char* bucket, const char* key, const char* fpath
 		goto bailout;
 	}
 
-	reply = chat(port, request, errmsg, errmsgsz);
+	reply = chat(port, request, errmsg, errmsgsz, 0);
 	if (! reply) {
 		goto bailout;
 	}
@@ -309,7 +319,7 @@ int s3pool_refresh(int port, const char* bucket,
 		goto bailout;
 	}
 
-	reply = chat(port, request, errmsg, errmsgsz);
+	reply = chat(port, request, errmsg, errmsgsz, 0);
 	if (! reply) {
 		goto bailout;
 	}
@@ -346,7 +356,7 @@ char* s3pool_glob(int port, const char* bucket, const char* pattern,
 	if (!request) {
 		goto bailout;
 	}
-	reply = chat(port, request, errmsg, errmsgsz);
+	reply = chat(port, request, errmsg, errmsgsz, 0);
 	if (! reply) {
 		goto bailout;
 	}

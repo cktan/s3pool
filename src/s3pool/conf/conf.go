@@ -12,7 +12,7 @@
  */
 package conf
 
-var VerboseLevel = 0
+var VerboseLevel = 1
 var RefreshInterval = 15 // in minutes
 var BucketmonChannel chan<- string
 
