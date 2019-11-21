@@ -37,15 +37,12 @@ type server struct {
 
 // Read client data from channel
 func (c *Client) accepted() {
-	defer c.conn.Close()
-	c.conn.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	c.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	reader := bufio.NewReader(c.conn)
 	req, _ := reader.ReadString('\n')
 	req = strings.Trim(req, " \n\t\r")
-	// ignore empty request
-	if req != "" {
-		c.Server.callback(c, req)
-	}
+	c.Server.callback(c, req)
+	c.conn.Close()
 }
 
 // Send text message to client

@@ -22,11 +22,8 @@ const _MAXWORKER = 20
 /**
  *  Process N items using M go routines
  */
-/**
- *  Process N items using M go routines
- */
 func Pmap(processItem func(n int), N int, M int) {
-	if (M > N) {
+	if M > N {
 		M = N
 	}
 
@@ -39,17 +36,13 @@ func Pmap(processItem func(n int), N int, M int) {
 	} else {
 		fin = make(chan int, 10)
 		ticket = make(chan int, 10)
-	} 
-	defer func() {
-		close(fin)
-		close(ticket)
-	}()
+	}
 
-	// let M go routines run concurrently
+	// let M workers run concurrently
 	for i := 0; i < M; i++ {
 		go func() {
 			for {
-				idx := <- ticket
+				idx := <-ticket
 				if idx == -1 {
 					return
 				}
@@ -59,24 +52,41 @@ func Pmap(processItem func(n int), N int, M int) {
 		}()
 	}
 
+	// send the jobs. Do this in a go routine so we don't have a
+	// race between ticket and fin
 	go func() {
-		// send the jobs
 		for i := 0; i < N; i++ {
 			ticket <- i
 		}
-		// send the terminate signal
-		for i := 0; i < M; i++ {
-			ticket <- -1
-		}
 	}()
-	
+
 	// wait for all jobs to finish
 	for i := 0; i < N; i++ {
 		<-fin
 	}
 
-}
+	// Go Channel Closing Principle:
+	//  - Don't close a channel from the receiver side and
+	//  - Don't close a channel if the channel has multiple concurrent senders.
 
+	// At this point, we gave out N tickets, and we received N fins.
+	// All workers must be blocked waiting for ticket at this time.
+	// They will next get the term signal and exit.
+
+	// Even though we are receiver on fin, we can close it making sure
+	// sure that no one will ever send to it again.
+	close(fin)
+
+	// Send the terminate signal. each worker will get the term
+	// signal and MUST NOT send to fin (it was closed above).
+	for i := 0; i < M; i++ {
+		ticket <- -1
+	}
+
+	// we are the only one sending on ticket, so it is always safe
+	// for us to close ticket.
+	close(ticket)
+}
 
 func Pull(args []string) (string, error) {
 	if len(args) < 2 {

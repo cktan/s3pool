@@ -63,6 +63,11 @@ func checkdirs() {
 // Callback function for each new request
 func serve(c *tcp_server.Client, request string) {
 
+	if request == "" {
+		log.Println("Empty request or timed out reading request")
+		return
+	}
+
 	sendReply := func(status, reply string, elapsed int) {
 		// send network reply
 		c.Send(status)

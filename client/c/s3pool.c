@@ -115,12 +115,10 @@ static int check_reply(char* reply, char* errmsg, int errmsgsz)
 
 
 static char* chat(int port, const char* request,
-				  char* errmsg, int errmsgsz,
-				  FILE* trace)
+				  char* errmsg, int errmsgsz)
 {
 	int sockfd = -1;
 	struct sockaddr_in servaddr;
-	int replysz = 0;
 	char* reply = 0;
 
 	// socket create and verification
@@ -148,48 +146,50 @@ static char* chat(int port, const char* request,
 	}
 
 	// read the reply
-	char* p = reply;
-	char* q = reply + replysz;
+	int top, max;
+	top = max = 0;
 	while (1) {
-		
-		// always keep one extra byte slack for NUL term
-		if (p + 1 >= q) {
-			int newsz = replysz * 1.5;
-			if (newsz == 0) newsz = 10;
+
+		if (top == max) {
+			int newsz = max * 1.5;
+			if (newsz == 0) newsz = 1024;
 			char* t = realloc(reply, newsz);
 			if (!t) {
 				snprintf(errmsg, errmsgsz, "s3pool read: reply message too big -- out of memory");
 				goto bailout;
 			}
-			int n = p - reply;
 			reply = t;
-			replysz = newsz;
-			p = t + n;
-			q = reply + replysz;
+			max = newsz;
 		}
 
-		assert(p + 1 < q);
-		int n = read(sockfd, p, q - p - 1);
+		int n = read(sockfd, reply + top, max - top);
 		if (n == -1) {
 			if (errno == EAGAIN) continue;
 
 			snprintf(errmsg, errmsgsz, "s3pool read: %s", strerror(errno));
 			goto bailout;
 		}
-		p += n;
-		*p = 0;					/* NUL */
-
-		if (trace) {
-			fprintf(trace, "\nNNN: %s\n", p - n);
-		}
+		top += n;
 		if (n == 0) break;
+	}
+	if (top == max) {
+		char* t = realloc(reply, max + 1);
+		if (!t) {
+			snprintf(errmsg, errmsgsz, "s3pool read: reply message too big -- out of memory");
+			goto bailout;
+		}
+		reply = t;
+		max = max + 1;
+	}
+	reply[top++] = 0;			/* NUL */
+
+	if (top == 1) {
+		snprintf(errmsg, errmsgsz, "s3pool read: 0 bytes from server");
+		goto bailout;
 	}
 
 	close(sockfd);
-
-	if (trace) {
-		fprintf(trace, "\nSEND: %s\nRECEIVED: %s\n", request, reply);
-	}
+	sockfd = -1;
 
 	if (-1 == check_reply(reply, errmsg, errmsgsz)) {
 		goto bailout;
@@ -247,11 +247,7 @@ char* s3pool_pull_ex(int port, const char* bucket,
 		goto bailout;
 	}
 
-	char fname[100];
-	sprintf(fname, "/tmp/s3pool.%d.log", getpid());
-	FILE* fp = fopen(fname, "a");
-	reply = chat(port, request, errmsg, errmsgsz, fp);
-	fclose(fp);
+	reply = chat(port, request, errmsg, errmsgsz);
 	if (! reply) {
 		goto bailout;
 	}
@@ -293,7 +289,7 @@ int s3pool_push(int port, const char* bucket, const char* key, const char* fpath
 		goto bailout;
 	}
 
-	reply = chat(port, request, errmsg, errmsgsz, 0);
+	reply = chat(port, request, errmsg, errmsgsz);
 	if (! reply) {
 		goto bailout;
 	}
@@ -324,7 +320,7 @@ int s3pool_refresh(int port, const char* bucket,
 		goto bailout;
 	}
 
-	reply = chat(port, request, errmsg, errmsgsz, 0);
+	reply = chat(port, request, errmsg, errmsgsz);
 	if (! reply) {
 		goto bailout;
 	}
@@ -361,7 +357,7 @@ char* s3pool_glob(int port, const char* bucket, const char* pattern,
 	if (!request) {
 		goto bailout;
 	}
-	reply = chat(port, request, errmsg, errmsgsz, 0);
+	reply = chat(port, request, errmsg, errmsgsz);
 	if (! reply) {
 		goto bailout;
 	}
