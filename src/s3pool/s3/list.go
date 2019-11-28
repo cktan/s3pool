@@ -61,7 +61,7 @@ func ListObjects(bucket string, notify func(key, etag string)) error {
 		//       "Key" : "key value"
 		//       "ETag" : "\"etag\""
 		//   }
-		// Note: the order of Key and ETag is random.
+		// Note: the order of Key and ETag is random, but one must follow another.
 		nv := strings.SplitN(s, ":", 2)
 		if len(nv) != 2 {
 			// reset if not a key value

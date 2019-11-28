@@ -14,44 +14,15 @@ package op
 
 import (
 	"errors"
+	"s3pool/jobqueue"
 	"s3pool/s3"
 	"strings"
 	"sync"
 )
 
-const _MAXWORKER = 20
+const _MAXWORKER = 10
 
-/**
- *  Process N items using M go routines
- */
-func Pmap(processItem func(n int), N int, M int) {
-	if M > N {
-		M = N
-	}
-
-	wg := &sync.WaitGroup{}
-	ticket := make(chan int, 10)
-
-	// let M workers run concurrently
-	wg.Add(M)
-	for i := 0; i < M; i++ {
-		go func() {
-			for idx := range ticket {
-				processItem(idx)
-			}
-			wg.Done()
-		}()
-	}
-
-	// send the jobs
-	for i := 0; i < N; i++ {
-		ticket <- i
-	}
-	close(ticket)
-
-	// wait for all jobs to finish
-	wg.Wait()
-}
+var pullQueue = jobqueue.New(_MAXWORKER)
 
 func Pull(args []string) (string, error) {
 	if len(args) < 2 {
@@ -65,12 +36,18 @@ func Pull(args []string) (string, error) {
 	nkeys := len(keys)
 	path := make([]string, nkeys)
 	patherr := make([]error, nkeys)
+	waitGroup := sync.WaitGroup{}
 
 	dowork := func(i int) {
 		path[i], patherr[i] = s3.GetObject(bucket, keys[i], false)
+		waitGroup.Done()
 	}
 
-	Pmap(dowork, nkeys, _MAXWORKER)
+	waitGroup.Add(nkeys)
+	for i := 0; i < nkeys; i++ {
+		pullQueue.Add(dowork, i)
+	}
+	waitGroup.Wait()
 
 	var reply strings.Builder
 	for i := 0; i < nkeys; i++ {
