@@ -15,6 +15,7 @@ package op
 import (
 	"errors"
 	"s3pool/cat"
+	"s3pool/s3"
 )
 
 /*
@@ -52,7 +53,7 @@ func Refresh(args []string) (string, error) {
 		numItems++
 	}
 
-	err := s3ListObjects(bucket, save)
+	err := s3.ListObjects(bucket, save)
 	cat.Store(bucket, key, etag, err)
 
 	if err != nil {

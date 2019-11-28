@@ -15,6 +15,7 @@ package conf
 var VerboseLevel = 1
 var RefreshInterval = 15 // in minutes
 var BucketmonChannel chan<- string
+var MaxConcurrentPull = 60
 
 func Verbose(level int) bool {
 	return VerboseLevel >= level

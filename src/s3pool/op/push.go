@@ -15,6 +15,7 @@ package op
 import (
 	"errors"
 	"fmt"
+	"s3pool/s3"
 )
 
 func Push(args []string) (string, error) {
@@ -29,7 +30,7 @@ func Push(args []string) (string, error) {
 		return "", err
 	}
 
-	err := s3PutObject(bucket, key, path)
+	err := s3.PutObject(bucket, key, path)
 	if err != nil {
 		return "", err
 	}

@@ -13,15 +13,11 @@
 package op
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 	"s3pool/cat"
 	"s3pool/conf"
 	"s3pool/strlock"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -44,43 +40,6 @@ func fileMtimeSince(path string) (time.Duration, error) {
 		return 0, err
 	}
 	return time.Since(mtime), nil
-}
-
-func mapToPath(bucket, key string) (path string, err error) {
-	path, err = filepath.Abs(fmt.Sprintf("data/%s/%s", bucket, key))
-	return
-}
-
-func mktmpfile() (path string, err error) {
-	fp, err := ioutil.TempFile("tmp", "s3f_")
-	if err != nil {
-		return
-	}
-	defer fp.Close()
-	path, err = filepath.Abs(fp.Name())
-	return
-}
-
-// move file src to dst while ensuring that
-// the dst's dir is created if necessary
-func moveFile(src, dst string) error {
-	if err := os.Rename(src, dst); err == nil {
-		return nil
-	}
-
-	idx := strings.LastIndexByte(dst, '/')
-	if idx > 0 {
-		dirpath := dst[:idx]
-		if err := os.MkdirAll(dirpath, 0755); err != nil {
-			return fmt.Errorf("Cannot mkdir %s -- %v", dirpath, err)
-		}
-	}
-
-	if err := os.Rename(src, dst); err != nil {
-		return fmt.Errorf("Cannot mv file -- %v", err)
-	}
-
-	return nil
 }
 
 // Check that we have a catalog on bucket. If not, create it.
