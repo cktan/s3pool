@@ -54,5 +54,18 @@ func Set(args []string) (string, error) {
 		return "\n", nil
 	}
 
+	if varname == "pull_concurrency" {
+		i, err := strconv.Atoi(varvalue)
+		if err != nil {
+			return "", err
+		}
+		if i < 5 {
+			i = 5 // minimum
+		}
+		conf.PullConcurrency = i
+		pullQueue.SetNWorker(i)
+		return "\n", nil
+	}
+
 	return "", errors.New("Unknown var name")
 }

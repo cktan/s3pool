@@ -25,6 +25,7 @@ import (
 	"s3pool/op"
 	"s3pool/pidfile"
 	"s3pool/tcp_server"
+	"strings"
 	"time"
 )
 
@@ -111,7 +112,7 @@ func serve(c *tcp_server.Client, request string) {
 	var cmd string
 	var cmdargs []string
 	if len(args) >= 1 {
-		cmd = args[0]
+		cmd = strings.ToUpper(args[0])
 		cmdargs = args[1:]
 	}
 

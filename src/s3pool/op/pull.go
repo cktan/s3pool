@@ -14,15 +14,14 @@ package op
 
 import (
 	"errors"
+	"s3pool/conf"
 	"s3pool/jobqueue"
 	"s3pool/s3"
 	"strings"
 	"sync"
 )
 
-const _MAXWORKER = 10
-
-var pullQueue = jobqueue.New(_MAXWORKER)
+var pullQueue = jobqueue.New(conf.PullConcurrency)
 
 func Pull(args []string) (string, error) {
 	if len(args) < 2 {
