@@ -16,9 +16,11 @@ import (
 	"errors"
 	"fmt"
 	"s3pool/s3"
+	"s3pool/conf"
 )
 
 func Push(args []string) (string, error) {
+	conf.CountPush++
 	if len(args) != 3 {
 		return "", errors.New("Expected 3 arguments for PUSH")
 	}

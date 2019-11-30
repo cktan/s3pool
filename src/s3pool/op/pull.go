@@ -24,6 +24,7 @@ import (
 var pullQueue = jobqueue.New(conf.PullConcurrency)
 
 func Pull(args []string) (string, error) {
+	conf.CountPull++
 	if len(args) < 2 {
 		return "", errors.New("Expected at least 2 arguments for PULL")
 	}
@@ -36,9 +37,13 @@ func Pull(args []string) (string, error) {
 	path := make([]string, nkeys)
 	patherr := make([]error, nkeys)
 	waitGroup := sync.WaitGroup{}
+	var hit bool
 
 	dowork := func(i int) {
-		path[i], patherr[i] = s3.GetObject(bucket, keys[i], false)
+		path[i], hit, patherr[i] = s3.GetObject(bucket, keys[i], false)
+		if hit {
+			conf.CountPullHit++
+		} 
 		waitGroup.Done()
 	}
 

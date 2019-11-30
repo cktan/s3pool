@@ -30,7 +30,7 @@ import (
 //
 //   aws s3api get-object --bucket BUCKET --key KEY --if-none-match ETAG tmppath
 //
-func GetObject(bucket string, key string, force bool) (string, error) {
+func GetObject(bucket string, key string, force bool) (retpath string, hit bool, err error) {
 	if conf.Verbose(1) {
 		log.Println("s3 get-objects", bucket, key)
 	}
@@ -38,14 +38,15 @@ func GetObject(bucket string, key string, force bool) (string, error) {
 	// lock to serialize pull on same (bucket,key)
 	lockname, err := strlock.Lock(bucket + ":" + key)
 	if err != nil {
-		return "", err
+		return
 	}
 	defer strlock.Unlock(lockname)
 
 	// Get destination path
 	path, err := mapToPath(bucket, key)
 	if err != nil {
-		return "", fmt.Errorf("Cannot map bucket+key to path -- %v", err)
+		err = fmt.Errorf("Cannot map bucket+key to path -- %v", err)
+		return
 	}
 
 	// Get etag from meta file
@@ -58,7 +59,9 @@ func GetObject(bucket string, key string, force bool) (string, error) {
 		if conf.Verbose(1) {
 			log.Println(" ... cache hit:", key)
 		}
-		return path, nil
+		retpath = path
+		hit = true
+		return
 	}
 
 	if conf.Verbose(1) {
@@ -71,8 +74,8 @@ func GetObject(bucket string, key string, force bool) (string, error) {
 	// Prepare to write to tmp file
 	tmppath, err := mktmpfile()
 	if err != nil {
-		return "", fmt.Errorf("Cannot create temp file -- %v", err)
-		return "", err
+		err = fmt.Errorf("Cannot create temp file -- %v", err)
+		return
 	}
 	defer os.Remove(tmppath)
 
@@ -99,19 +102,21 @@ func GetObject(bucket string, key string, force bool) (string, error) {
 			//log.Println(" ... update", key, etag)
 			cat.Update(bucket, key, etag)
 		}
-		return path, nil
+		retpath = path
+		return 
 	}
 	noSuchKey := strings.Contains(errstr, "NoSuchKey")
 	if noSuchKey {
 		cat.Delete(bucket, key)
 	}
 	if err != nil {
-		return "", fmt.Errorf("aws s3api get-object failed -- %s", errstr)
+		err = fmt.Errorf("aws s3api get-object failed -- %s", errstr)
+		return
 	}
 
 	// The file has been downloaded to tmppath. Now move it to the right place.
 	if err = moveFile(tmppath, path); err != nil {
-		return "", err
+		return
 	}
 
 	// Save the meta info
@@ -125,5 +130,6 @@ func GetObject(bucket string, key string, force bool) (string, error) {
 	}
 
 	// Done!
-	return path, nil
+	retpath = path
+	return
 }

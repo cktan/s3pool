@@ -16,6 +16,7 @@ import (
 	"errors"
 	"s3pool/cat"
 	"s3pool/s3"
+	"s3pool/conf"
 )
 
 /*
@@ -23,12 +24,14 @@ import (
   2. save the key[] and etag[] to catalog
 */
 func Refresh(args []string) (string, error) {
+	conf.CountRefresh++
 
 	if len(args) != 1 {
 		return "", errors.New("expects 1 argument for REFRESH")
 	}
 	bucket := args[0]
 	// DO NOT checkCatalog here. We will update it!
+
 
 	numItems := 0
 	/*

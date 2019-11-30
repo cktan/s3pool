@@ -131,6 +131,8 @@ func serve(c *tcp_server.Client, request string) {
 		reply, err = op.Push(cmdargs)
 	case "SET":
 		reply, err = op.Set(cmdargs)
+	case "STATUS":
+		reply, err = op.Status(cmdargs)
 	default:
 		err = errors.New("Bad command: " + cmd)
 	}
