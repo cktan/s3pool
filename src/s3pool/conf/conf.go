@@ -17,6 +17,7 @@ var RefreshInterval = 15 // in minutes
 var BucketmonChannel chan<- string
 var PullConcurrency = 20
 
+
 func Verbose(level int) bool {
 	return VerboseLevel >= level
 }

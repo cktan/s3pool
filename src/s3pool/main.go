@@ -125,11 +125,6 @@ func serve(c *tcp_server.Client, request string) {
 		if err == nil {
 			conf.NotifyBucketmon(cmdargs[0])
 		}
-	case "GLOBX":
-		reply, err = op.Globx(cmdargs)
-		if err == nil {
-			conf.NotifyBucketmon(cmdargs[0])
-		}
 	case "REFRESH":
 		reply, err = op.Refresh(cmdargs)
 	case "PUSH":
@@ -218,6 +213,7 @@ func main() {
 	// setup log file
 	mon.SetLogPrefix("log/s3pool")
 	log.Println("Starting:", os.Args)
+	log.Println("Revision:", conf.Revision)
 
 	// setup and check pid file
 	if *p.pidFile == "" {
