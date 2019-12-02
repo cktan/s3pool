@@ -16,22 +16,21 @@ import (
 	"sync"
 )
 
-
 type Item struct {
-	idx int
-	processItem  func(idx int)
+	idx         int
+	processItem func(idx int)
 }
 
 type JobQueue struct {
-	sync.Mutex		// protects nworker and nzombie
-	nworker     int		// # go routines running
-	nzombie     int		// # those dying
-	backlog chan *Item	// send jobs through this channel
-	waitGroup sync.WaitGroup // sync for group exit
+	sync.Mutex                // protects nworker and nzombie
+	nworker    int            // # go routines running
+	nzombie    int            // # those dying
+	backlog    chan *Item     // send jobs through this channel
+	waitGroup  sync.WaitGroup // sync for group exit
 }
 
 func New(nworker int) *JobQueue {
-	jq := &JobQueue{ backlog: make(chan *Item, 100) }
+	jq := &JobQueue{backlog: make(chan *Item, 100)}
 	jq.SetNWorker(nworker)
 	return jq
 }
@@ -50,27 +49,31 @@ func (jq *JobQueue) SetNWorker(n int) {
 		return
 	}
 
+	addition := 0
 	jq.Lock()
-	defer jq.Unlock()
-
-	// increase workers
-	for jq.nworker - jq.nzombie < n {
-		if jq.nzombie > 0 {
-			jq.nzombie--
-			continue
+	if true {
+		// increase workers
+		for jq.nworker-jq.nzombie < n {
+			if jq.nzombie > 0 {
+				jq.nzombie--
+			} else {
+				jq.nworker++
+				addition++
+			}
 		}
 
-		jq.nworker++
+		// decrease workers
+		for jq.nworker-jq.nzombie > n {
+			jq.nzombie++
+		}
+	}
+	jq.Unlock()
+
+	for i := 0; i < addition; i++ {
 		jq.waitGroup.Add(1)
 		go jq.run()
 	}
-
-	// decrease workers
-	for jq.nworker - jq.nzombie > n {
-		jq.nzombie++
-	}
 }
-
 
 func (jq *JobQueue) run() {
 	for item := range jq.backlog {
@@ -92,10 +95,7 @@ func (jq *JobQueue) run() {
 	jq.waitGroup.Done()
 }
 
-
 func (jq *JobQueue) Add(processItem func(idx int), idx int) {
 	item := &Item{idx, processItem}
 	jq.backlog <- item
 }
-
-
