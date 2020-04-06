@@ -100,7 +100,7 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 		//log.Println("   ... catetag", catetag)
 		if etag != catetag && etag != "" {
 			//log.Println(" ... update", key, etag)
-			cat.Update(bucket, key, etag)
+			cat.Upsert(bucket, key, etag)
 		}
 		retpath = path
 		return 
@@ -126,7 +126,7 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 	etag = extractETag(metapath)
 	if etag != "" {
 		//log.Println(" ... update", key, etag)
-		cat.Update(bucket, key, etag)
+		cat.Upsert(bucket, key, etag)
 	}
 
 	// Done!

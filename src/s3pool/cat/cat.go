@@ -30,78 +30,86 @@ func Find(bucket, key string) (etag string) {
 			log.Println("Catalog.Find", bucket, key, " -- ", etag)
 		}()
 	}
-	km, ok := bm.Get(bucket)
-	if ok {
-		km.RLock()
-		etag, ok = (*km.Map)[key]
-		km.RUnlock()
+	km := bm.Get(bucket)
+	if km == nil {
+		return 
 	}
-	return
+
+	etag = km.SearchExact(key)
+	return 
 }
 
-func Update(bucket, key, etag string) {
+
+func Upsert(bucket, key, etag string) {
 	if trace {
 		log.Println("Catalog.Update", bucket, key, etag)
 	}
-	km, ok := bm.Get(bucket)
-	if ok {
-		km.Lock()
-		(*km.Map)[key] = etag
-		km.Unlock()
+
+	km := bm.Get(bucket)
+	if km == nil {
+		return 
 	}
+
+	km.Upsert(key, etag)
 }
+
 
 func Delete(bucket, key string) {
 	if trace {
 		log.Println("Catalog.Delete", bucket, key)
 	}
-	km, ok := bm.Get(bucket)
-	if ok {
-		km.Lock()
-		delete(*km.Map, key)
-		km.Unlock()
+
+	km := bm.Get(bucket)
+	if km == nil {
+		return 
 	}
+
+	km.Delete(key)
 }
 
-func Scan(bucket string, filter func(string) bool) (key []string) {
+
+func Scan(bucket string, prefix string, filter func(string) bool) (key []string) {
 	if trace {
 		log.Println("Catalog.Scan", bucket)
 	}
+
 	key = make([]string, 0, 100)
-	km, ok := bm.Get(bucket)
-	if !ok {
+	km := bm.Get(bucket)
+	if km == nil {
 		return
 	}
 
-	km.RLock()
-	for kkk := range *km.Map {
-		if filter(kkk) {
-			key = append(key, kkk)
+	item := km.SearchPrefix(prefix)
+	for _, v := range item {
+		if v.ETag == "" {
+			continue
+		}
+		if filter(v.Key) {
+			key = append(key, v.Key)
 		}
 	}
-	km.RUnlock()
 	return
 }
+
+
 
 func Store(bucket string, key, etag []string, err error) {
 	if trace {
 		log.Println("Catalog.Store", bucket)
 	}
-	dict := make(map[string]string)
-	for i := range key {
-		dict[key[i]] = etag[i]
+	km, err := NewKeyMap(key, etag, err)
+	if err != nil {
+		return
 	}
-	bm.Put(bucket, &dict, err)
+	bm.Put(bucket, km)
 }
 
 func Exists(bucket string) (ok bool, err error) {
-	var km *KeyMap
-	km, ok = bm.Get(bucket)
-	if ok {
-		km.Lock()
-		err = km.err
-		km.Unlock()
+	km := bm.Get(bucket)
+	if km == nil {
+		return
 	}
-
+	ok = true
+	err = km.err
 	return
 }

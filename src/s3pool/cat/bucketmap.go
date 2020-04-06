@@ -16,12 +16,6 @@ import (
 	"sync"
 )
 
-type KeyMap struct {
-	sync.RWMutex
-	err error
-	Map *map[string]string // key to etag
-}
-
 type BucketMap struct {
 	sync.RWMutex
 	Map map[string]*KeyMap
@@ -41,32 +35,20 @@ func (bm *BucketMap) Keys() []string {
 	return res
 }
 
-func (bm *BucketMap) Get(bucket string) (result *KeyMap, ok bool) {
+func (bm *BucketMap) Get(bucket string) *KeyMap {
 	bm.RLock()
-	result, ok = bm.Map[bucket]
+	result, ok := bm.Map[bucket]
 	bm.RUnlock()
-	return
+	if !ok {
+		return nil
+	}
+	return result
 }
 
-func (bm *BucketMap) Put(bucket string, key2etag *map[string]string, err error) {
+func (bm *BucketMap) Put(bucket string, kmap *KeyMap) {
 	bm.Lock()
-	km := bm.Map[bucket]
-	if km == nil {
-		// this is a new keymap
-		km = &KeyMap{Map: key2etag}
-		// even though we will assign to km.Map again later,
-		// it is better to also do it here to ensure that
-		// km.Map is never nil to avoid potential race
-		km.Map = key2etag
-		km.err = err
-		bm.Map[bucket] = km
-	}
+	bm.Map[bucket] = kmap
 	bm.Unlock()
-
-	km.Lock()
-	km.Map = key2etag
-	km.err = err
-	km.Unlock()
 }
 
 func (bm *BucketMap) Delete(bucket string) {
