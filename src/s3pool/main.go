@@ -139,11 +139,11 @@ func serve(c *tcp_server.Client, request string) {
 }
 
 type progArgs struct {
-	port       *int
-	dir        *string
-	noDaemon   *bool
-	daemonPrep *bool
-	pidFile    *string
+	port            *int
+	dir             *string
+	noDaemon        *bool
+	daemonPrep      *bool
+	pidFile         *string
 	pullConcurrency *int
 }
 
@@ -153,7 +153,7 @@ func parseArgs() (p progArgs, err error) {
 	p.noDaemon = flag.Bool("n", false, "do not run as daemon")
 	p.daemonPrep = flag.Bool("daemonprep", false, "internal, do not use")
 	p.pidFile = flag.String("pidfile", "", "store pid in this path")
-	p.pullConcurrency  = flag.Int("c", 20, "maximum concurrent pull from s3")
+	p.pullConcurrency = flag.Int("c", 20, "maximum concurrent pull from s3")
 
 	flag.Parse()
 

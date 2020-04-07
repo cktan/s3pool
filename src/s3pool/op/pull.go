@@ -43,7 +43,7 @@ func Pull(args []string) (string, error) {
 		path[i], hit, patherr[i] = s3.GetObject(bucket, keys[i], false)
 		if hit {
 			conf.CountPullHit++
-		} 
+		}
 		waitGroup.Done()
 	}
 

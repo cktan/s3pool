@@ -2,26 +2,25 @@ package cat
 
 import (
 	"errors"
+	"log"
 	"sort"
 	"strings"
 	"sync"
 )
 
 type ItemRec struct {
-	Key string
+	Key  string
 	ETag string
 }
 
-
 type KeyMap struct {
 	sync.RWMutex
-	err error
+	err  error
 	Item []ItemRec
 }
 
-
 func NewKeyMap(key []string, etag []string, err error) (km *KeyMap, reterr error) {
-	if (len(key) != len(etag)) {
+	if len(key) != len(etag) {
 		reterr = errors.New("len(key) != len(etag)")
 		return
 	}
@@ -32,26 +31,16 @@ func NewKeyMap(key []string, etag []string, err error) (km *KeyMap, reterr error
 		item[i] = ItemRec{key[i], etag[i]}
 	}
 
-	sort.SliceStable(item, func(i,j int) bool { return item[i].Key < item[j].Key })
+	sort.SliceStable(item, func(i, j int) bool { return item[i].Key < item[j].Key })
 
 	km = &KeyMap{err: err, Item: item}
-	return
-}
-
-
-func (p *KeyMap) bisect_right(x string) int {
-	lo := 0
-	hi := len(p.Item)
-	a := p.Item
-	for lo < hi {
-		mid := (lo + hi) / 2
-		if x < a[mid].Key {
-			hi = mid
-		} else {
-			lo = mid + 1
+	if trace {
+		log.Println("Created new keymap with", len(item), "items")
+		for i := 0; i < 5 && i < len(item); i++ {
+			log.Println("  ", i, item[i].Key, item[i].ETag)
 		}
 	}
-	return lo
+	return
 }
 
 func (p *KeyMap) bisect_left(x string) int {
@@ -75,35 +64,41 @@ func (p *KeyMap) SearchPrefix(prefix string) []ItemRec {
 	idx := p.bisect_left(prefix)
 	count := 0
 	for i := idx; i < len(p.Item); i++ {
+		if trace {
+			log.Println("SearchPrefix comparing ", p.Item[i].Key, "and prefix", prefix)
+		}
 		if !strings.HasPrefix(p.Item[i].Key, prefix) {
+			log.Println("  no match")
 			break
 		}
+		count++
 	}
-	ret := p.Item[idx:idx+count]
+	ret := p.Item[idx : idx+count]
 	p.RUnlock()
-	return ret 
-}
 
+	if trace {
+		log.Println("SearchPrefix returning", len(ret), "items")
+	}
+	return ret
+}
 
 func (p *KeyMap) SearchExact(key string) (etag string) {
 	p.RLock()
 	idx := p.bisect_left(key)
-	if idx < len(p.Item) && p.Item[idx].Key == key {	
+	if idx < len(p.Item) && p.Item[idx].Key == key {
 		etag = p.Item[idx].ETag
 	}
 	p.RUnlock()
-	return 
+	return
 }
-
 
 func (p *KeyMap) Delete(key string) {
 	p.Update(key, "")
 }
 
-
 func (p *KeyMap) Update(key string, etag string) bool {
 	ok := false
-	p.RLock()			// rlock is sufficient!
+	p.RLock() // rlock is sufficient!
 	idx := p.bisect_left(key)
 	if idx < len(p.Item) && p.Item[idx].Key == key {
 		p.Item[idx].ETag = etag
@@ -113,16 +108,15 @@ func (p *KeyMap) Update(key string, etag string) bool {
 	return ok
 }
 
-
 func (p *KeyMap) Upsert(key string, etag string) {
 	p.Lock()
-	idx := p.bisect_right(key)
+	idx := p.bisect_left(key)
 	if idx == len(p.Item) {
 		p.Item = append(p.Item, ItemRec{key, etag})
-	} else if (p.Item[idx].Key == key) {
+	} else if p.Item[idx].Key == key {
 		p.Item[idx].ETag = etag
 	} else {
-		x := make([]ItemRec, 0, len(p.Item) + 1)
+		x := make([]ItemRec, 0, len(p.Item)+1)
 		x = append(p.Item[:idx], ItemRec{key, etag})
 		x = append(x, p.Item[idx:]...)
 		p.Item = x

@@ -15,8 +15,8 @@ package op
 import (
 	"errors"
 	"fmt"
-	"s3pool/s3"
 	"s3pool/conf"
+	"s3pool/s3"
 )
 
 func Push(args []string) (string, error) {

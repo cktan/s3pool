@@ -103,7 +103,7 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 			cat.Upsert(bucket, key, etag)
 		}
 		retpath = path
-		return 
+		return
 	}
 	noSuchKey := strings.Contains(errstr, "NoSuchKey")
 	if noSuchKey {

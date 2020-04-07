@@ -15,8 +15,8 @@ package op
 import (
 	"errors"
 	"s3pool/cat"
-	"s3pool/s3"
 	"s3pool/conf"
+	"s3pool/s3"
 )
 
 /*
@@ -31,7 +31,6 @@ func Refresh(args []string) (string, error) {
 	}
 	bucket := args[0]
 	// DO NOT checkCatalog here. We will update it!
-
 
 	numItems := 0
 	/*

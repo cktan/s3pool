@@ -27,17 +27,16 @@ func globPrefix(pattern string) string {
 	return s
 }
 
-
 func Glob(args []string) (string, error) {
 	conf.CountGlob++
-	
+
 	var err error
 
 	if len(args) != 2 {
 		return "", errors.New("expects 2 arguments for GLOB")
 	}
 	bucket, pattern := args[0], args[1]
-	
+
 	if err = checkCatalog(bucket); err != nil {
 		return "", err
 	}

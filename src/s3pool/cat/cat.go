@@ -17,7 +17,7 @@ import (
 )
 
 var bm = newBucketMap()
-var trace bool
+var trace = true
 
 func KnownBuckets() []string {
 	return bm.Keys()
@@ -32,13 +32,12 @@ func Find(bucket, key string) (etag string) {
 	}
 	km := bm.Get(bucket)
 	if km == nil {
-		return 
+		return
 	}
 
 	etag = km.SearchExact(key)
-	return 
+	return
 }
-
 
 func Upsert(bucket, key, etag string) {
 	if trace {
@@ -47,12 +46,11 @@ func Upsert(bucket, key, etag string) {
 
 	km := bm.Get(bucket)
 	if km == nil {
-		return 
+		return
 	}
 
 	km.Upsert(key, etag)
 }
-
 
 func Delete(bucket, key string) {
 	if trace {
@@ -61,12 +59,11 @@ func Delete(bucket, key string) {
 
 	km := bm.Get(bucket)
 	if km == nil {
-		return 
+		return
 	}
 
 	km.Delete(key)
 }
-
 
 func Scan(bucket string, prefix string, filter func(string) bool) (key []string) {
 	if trace {
@@ -80,6 +77,9 @@ func Scan(bucket string, prefix string, filter func(string) bool) (key []string)
 	}
 
 	item := km.SearchPrefix(prefix)
+	if trace {
+		log.Println("Catalog.Scan bucket", bucket, "prefix", prefix, "found", len(item), "items")
+	}
 	for _, v := range item {
 		if v.ETag == "" {
 			continue
@@ -91,11 +91,9 @@ func Scan(bucket string, prefix string, filter func(string) bool) (key []string)
 	return
 }
 
-
-
 func Store(bucket string, key, etag []string, err error) {
 	if trace {
-		log.Println("Catalog.Store", bucket)
+		log.Println("Catalog.Store", bucket, "#keys", len(key))
 	}
 	km, err := NewKeyMap(key, etag, err)
 	if err != nil {
@@ -105,6 +103,9 @@ func Store(bucket string, key, etag []string, err error) {
 }
 
 func Exists(bucket string) (ok bool, err error) {
+	if trace {
+		log.Println("Catalog.Exists", bucket)
+	}
 	km := bm.Get(bucket)
 	if km == nil {
 		return
