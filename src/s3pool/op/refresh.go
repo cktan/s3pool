@@ -55,7 +55,7 @@ func Refresh(args []string) (string, error) {
 		numItems++
 	}
 
-	err := s3.ListObjects(bucket, save)
+	err := s3.ListObjects(bucket, "", save)
 	cat.Store(bucket, key, etag, err)
 
 	if err != nil {

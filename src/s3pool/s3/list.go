@@ -31,7 +31,7 @@ type ListCollection struct {
 	Contents []ListRecord
 }
 
-func ListObjects(bucket string, notify func(key, etag string)) error {
+func ListObjects(bucket string, prefix string, notify func(key, etag string)) error {
 	if conf.Verbose(1) {
 		log.Println("s3 list-objects", bucket)
 	}
@@ -39,9 +39,17 @@ func ListObjects(bucket string, notify func(key, etag string)) error {
 	var err error
 
 	// invoke s3api to list objects
-	cmd := exec.Command("aws", "s3api", "list-objects-v2",
-		"--bucket", bucket,
-		"--query", "Contents[].{Key: Key, ETag: ETag}")
+	var cmd *exec.Cmd
+	if prefix == "" {
+		cmd = exec.Command("aws", "s3api", "list-objects-v2",
+			"--bucket", bucket,
+			"--query", "Contents[].{Key: Key, ETag: ETag}")
+	} else {
+		cmd = exec.Command("aws", "s3api", "list-objects-v2",
+			"--bucket", bucket,
+			"--prefix", prefix,
+			"--query", "Contents[].{Key: Key, ETag: ETag}")
+	}
 	var errbuf bytes.Buffer
 	cmd.Stderr = &errbuf
 	pipe, _ := cmd.StdoutPipe()
