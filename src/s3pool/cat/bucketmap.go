@@ -25,7 +25,7 @@ func newBucketMap() *BucketMap {
 	return &BucketMap{Map: make(map[string]*KeyMap)}
 }
 
-func (bm *BucketMap) Keys() []string {
+func (bm *BucketMap) keys() []string {
 	res := make([]string, 0, 10)
 	bm.RLock()
 	for k := range bm.Map {
@@ -35,7 +35,7 @@ func (bm *BucketMap) Keys() []string {
 	return res
 }
 
-func (bm *BucketMap) Get(bucket string) *KeyMap {
+func (bm *BucketMap) get(bucket string) *KeyMap {
 	bm.RLock()
 	result, ok := bm.Map[bucket]
 	bm.RUnlock()
@@ -45,13 +45,13 @@ func (bm *BucketMap) Get(bucket string) *KeyMap {
 	return result
 }
 
-func (bm *BucketMap) Put(bucket string, kmap *KeyMap) {
+func (bm *BucketMap) put(bucket string, kmap *KeyMap) {
 	bm.Lock()
 	bm.Map[bucket] = kmap
 	bm.Unlock()
 }
 
-func (bm *BucketMap) Delete(bucket string) {
+func (bm *BucketMap) delete(bucket string) {
 	bm.Lock()
 	delete(bm.Map, bucket)
 	bm.Unlock()

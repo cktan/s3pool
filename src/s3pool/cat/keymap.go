@@ -19,7 +19,7 @@ type KeyMap struct {
 	Item []ItemRec
 }
 
-func NewKeyMap(key []string, etag []string, err error) (km *KeyMap, reterr error) {
+func newKeyMap(key []string, etag []string, err error) (km *KeyMap, reterr error) {
 	if len(key) != len(etag) {
 		reterr = errors.New("len(key) != len(etag)")
 		return
@@ -59,7 +59,7 @@ func (p *KeyMap) bisect_left(x string) int {
 	return lo
 }
 
-func (p *KeyMap) SearchPrefix(prefix string) []ItemRec {
+func (p *KeyMap) searchPrefix(prefix string) []ItemRec {
 	p.RLock()
 	idx := p.bisect_left(prefix)
 	count := 0
@@ -82,7 +82,7 @@ func (p *KeyMap) SearchPrefix(prefix string) []ItemRec {
 	return ret
 }
 
-func (p *KeyMap) SearchExact(key string) (etag string) {
+func (p *KeyMap) searchExact(key string) (etag string) {
 	p.RLock()
 	idx := p.bisect_left(key)
 	if idx < len(p.Item) && p.Item[idx].Key == key {
@@ -92,11 +92,11 @@ func (p *KeyMap) SearchExact(key string) (etag string) {
 	return
 }
 
-func (p *KeyMap) Delete(key string) {
-	p.Update(key, "")
+func (p *KeyMap) delete(key string) {
+	p.update(key, "")
 }
 
-func (p *KeyMap) Update(key string, etag string) bool {
+func (p *KeyMap) update(key string, etag string) bool {
 	ok := false
 	p.RLock() // rlock is sufficient!
 	idx := p.bisect_left(key)
@@ -108,7 +108,7 @@ func (p *KeyMap) Update(key string, etag string) bool {
 	return ok
 }
 
-func (p *KeyMap) Upsert(key string, etag string) {
+func (p *KeyMap) upsert(key string, etag string) {
 	p.Lock()
 	idx := p.bisect_left(key)
 	if idx == len(p.Item) {
