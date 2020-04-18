@@ -45,13 +45,13 @@ func Initialize(n int) {
 }
 
 
-func Glob(bucket string, key string) (error, []string, []string) {
+func List(bucket string, prefix string) (error, []string, []string) {
 	ch := make(chan *replyType)
 	h := fnv.New32a()
 	h.Write([]byte(bucket))
 	h.Write([]byte{0})
-	h.Write([]byte(key))
-	server[h.Sum32() % nserver].ch <- &requestType{"GLOB", []string{bucket, key}, ch}
+	h.Write([]byte(prefix))	
+	server[h.Sum32() % nserver].ch <- &requestType{"LIST", []string{bucket, prefix}, ch}
 	reply := <- ch
 	return reply.err, reply.key, reply.etag
 }
