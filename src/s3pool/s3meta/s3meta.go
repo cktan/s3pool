@@ -44,6 +44,14 @@ func Initialize(n int) {
 	}
 }
 
+func KnownBuckets() []string {
+	return getKnownBuckets()
+}
+
+func SearchExact(bucket, key string) (etag string) {
+	return searchExact(bucket, key)
+}
+
 
 func List(bucket string, prefix string) (error, []string, []string) {
 	ch := make(chan *replyType)

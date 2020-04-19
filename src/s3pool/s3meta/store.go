@@ -2,6 +2,7 @@ package s3meta
 
 import (
 	"sync"
+	"strings"
 )
 
 type storeCB struct {
@@ -15,6 +16,24 @@ type storeCB struct {
 
 var storeLock = sync.Mutex{}
 var storeList = make(map[string]*storeCB)
+
+func getKnownBuckets() []string {
+	storeLock.Lock()
+	list := make([]string, len(storeList))
+	i := 0
+	for k := range storeList {
+		list[i] = k
+		i++
+	}
+	storeLock.Unlock()
+	return list
+}
+
+func searchExact(bucket, key string) (etag string) {
+	store := getStore(bucket)
+	etag = store.getETag(key)
+	return
+}
 
 
 func getStore(bucket string) *storeCB {
@@ -60,17 +79,21 @@ func (p *storeCB) setEtag(key string, etag string) {
 	}
 }
 
+func (p *storeCB) getETag(key string) string {
+	return p.etag[key]
+}
+
 func (p *storeCB) remove(prefix string) {
 	p.Lock()
 	idx := bisectLeft(p.prefix, prefix)
 	if (idx < len(p.prefix) && p.prefix[idx] == prefix) {
 		// delete prefix from p.prefix[]
 		a := p.prefix
-		a = append(a[:idx], a[idx+1]...)
+		a = append(a[:idx], a[idx+1:]...)
 		p.prefix = a
 		
 		// delete all etags of keys belonging to prefix
-		for _, k := p.key[prefix] {
+		for _, k := range p.key[prefix] {
 			delete(p.etag, k)
 		}
 
@@ -97,7 +120,10 @@ func (p *storeCB) insert(prefix string, key, etag []string) {
 	}
 
 	// insert prefix at p.prefix[idx]
-	a := append([]string(nil), p.prefix[:idx], prefix, p.prefix[idx:]...)
+	a := make([]string, 0, len(p.prefix) + 1)
+	a = append(a, p.prefix[:idx]...)
+	a = append(a, prefix)
+	a = append(a, p.prefix[idx:]...)
 	p.prefix = a
 
 	// make a copy of key[] and save it
@@ -105,7 +131,7 @@ func (p *storeCB) insert(prefix string, key, etag []string) {
 	copy(p.key[prefix], key)
 	
 	// for each key, save its corresponding etag
-	for i, k := key {
+	for i, k := range key {
 		p.etag[k] = etag[i]
 	}
 	p.Unlock()

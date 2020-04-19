@@ -14,13 +14,21 @@ package cat
 
 import (
 	"log"
+	"s3pool/s3meta"
 )
 
 var bm = newBucketMap()
 var trace = true
+var useS3Meta = true
 
 func KnownBuckets() []string {
-	return bm.keys()
+	var ret []string
+	if useS3Meta {
+		ret = s3meta.KnownBuckets()
+	} else {
+		ret = bm.keys()
+	}
+	return ret
 }
 
 func Find(bucket, key string) (etag string) {
@@ -30,12 +38,14 @@ func Find(bucket, key string) (etag string) {
 			log.Println("Catalog.Find", bucket, key, " -- ", etag)
 		}()
 	}
-	km := bm.get(bucket)
-	if km == nil {
-		return
+	if useS3Meta {
+		etag = s3meta.SearchExact(bucket, key)
+	} else {
+		km := bm.get(bucket)
+		if km != nil {
+			etag = km.searchExact(key)
+		}
 	}
-
-	etag = km.searchExact(key)
 	return
 }
 

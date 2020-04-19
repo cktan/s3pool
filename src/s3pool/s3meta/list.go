@@ -2,7 +2,6 @@ package s3meta
 
 import (
 	"errors"
-	"strings"
 )
 
 
@@ -14,7 +13,7 @@ func (p *serverCB) list(req *requestType) (reply *replyType) {
 	}
 	
 	bucket, prefix := req.param[0], req.param[1]
-	store = getStore(bucket)
+	store := getStore(bucket)
 	if key, etag, ok := store.retrieve(prefix); ok {
 		reply.key = make([]string, len(key))
 		copy(reply.key, key)
@@ -23,7 +22,7 @@ func (p *serverCB) list(req *requestType) (reply *replyType) {
 		return
 	}
 
-	err = s3ListObjects(bucket, prefix, func(k, t string) {
+	err := s3ListObjects(bucket, prefix, func(k, t string) {
 		if k[len(k)-1] == '/' {
 			// skip DIR
 			return
@@ -37,6 +36,6 @@ func (p *serverCB) list(req *requestType) (reply *replyType) {
 		return
 	}
 	
-	store.insert(prefix, key, etag)
+	store.insert(prefix, reply.key, reply.etag)
 	return
 }
