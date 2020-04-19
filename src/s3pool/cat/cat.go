@@ -53,13 +53,14 @@ func Upsert(bucket, key, etag string) {
 	if trace {
 		log.Println("Catalog.Update", bucket, key, etag)
 	}
-
-	km := bm.get(bucket)
-	if km == nil {
-		return
+	if useS3Meta {
+		s3meta.SetETag(bucket, key, etag)
+	} else {
+		km := bm.get(bucket)
+		if km != nil {
+			km.upsert(key, etag)
+		}
 	}
-
-	km.upsert(key, etag)
 }
 
 func Delete(bucket, key string) {

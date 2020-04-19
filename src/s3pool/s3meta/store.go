@@ -29,11 +29,6 @@ func getKnownBuckets() []string {
 	return list
 }
 
-func searchExact(bucket, key string) (etag string) {
-	store := getStore(bucket)
-	etag = store.getETag(key)
-	return
-}
 
 
 func getStore(bucket string) *storeCB {
@@ -73,7 +68,7 @@ func bisectLeft(arr []string, x string) int {
 }
 
 
-func (p *storeCB) setEtag(key string, etag string) {
+func (p *storeCB) setETag(key string, etag string) {
 	if _, ok := p.etag[key]; ok {
 		p.etag[key] = etag
 	}

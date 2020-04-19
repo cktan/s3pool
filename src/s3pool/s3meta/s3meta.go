@@ -25,7 +25,6 @@ type serverCB struct {
 
 var server []*serverCB
 var nserver uint32
-var store storeCB
 
 func newServer() *serverCB {
 	s := &serverCB{make(chan *requestType)}
@@ -49,7 +48,14 @@ func KnownBuckets() []string {
 }
 
 func SearchExact(bucket, key string) (etag string) {
-	return searchExact(bucket, key)
+	store := getStore(bucket)
+	etag = store.getETag(key)
+	return
+}
+
+func SetETag(bucket, key, etag string) {
+	store := getStore(bucket)
+	store.setETag(key, etag)
 }
 
 
