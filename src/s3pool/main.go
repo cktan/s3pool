@@ -24,8 +24,8 @@ import (
 	"s3pool/mon"
 	"s3pool/op"
 	"s3pool/pidfile"
-	"s3pool/tcp_server"
 	"s3pool/s3meta"
+	"s3pool/tcp_server"
 	"strings"
 	"time"
 )
@@ -159,16 +159,16 @@ func parseArgs() (p progArgs, err error) {
 	flag.Parse()
 
 	if len(flag.Args()) != 0 {
-		err = errors.New("Extra arguments")
+		err = errors.New("Extra arguments.")
 		return
 	}
 
 	if !(0 < *p.port && *p.port <= 65535) {
-		err = errors.New("Missing or invalid port number")
+		err = errors.New("Missing or invalid port number.")
 		return
 	}
 	if "" == *p.dir {
-		err = errors.New("Missing or invalid home directory path")
+		err = errors.New("Missing or invalid home directory path.")
 		return
 	}
 
@@ -204,7 +204,9 @@ func main() {
 	// check flags
 	p, err := parseArgs()
 	if err != nil {
-		exit(err.Error())
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
+		fmt.Fprintf(os.Stderr, "For usage info, run with '--help' flag.\n\n")
+		os.Exit(1)
 	}
 
 	// get into the home dir

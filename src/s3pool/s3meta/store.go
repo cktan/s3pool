@@ -1,18 +1,17 @@
 package s3meta
 
 import (
-	"sync"
 	"strings"
+	"sync"
 )
 
 type storeCB struct {
 	sync.RWMutex
 
 	prefix []string
-	key   map[string]([]string) // prefix -> keys
-	etag  map[string]string     // key -> etag
+	key    map[string]([]string) // prefix -> keys
+	etag   map[string]string     // key -> etag
 }
-
 
 var storeLock = sync.Mutex{}
 var storeList = make(map[string]*storeCB)
@@ -35,7 +34,6 @@ func getKnownBuckets() []string {
 	return list
 }
 
-
 func getStore(bucket string) *storeCB {
 	storeLock.Lock()
 	x := storeList[bucket]
@@ -46,7 +44,6 @@ func getStore(bucket string) *storeCB {
 	storeLock.Unlock()
 	return x
 }
-
 
 func newStore() *storeCB {
 	var p storeCB
@@ -72,7 +69,6 @@ func bisectLeft(arr []string, x string) int {
 	return lo
 }
 
-
 func (p *storeCB) setETag(key string, etag string) {
 	if _, ok := p.etag[key]; ok {
 		p.etag[key] = etag
@@ -86,12 +82,12 @@ func (p *storeCB) getETag(key string) string {
 func (p *storeCB) remove(prefix string) {
 	p.Lock()
 	idx := bisectLeft(p.prefix, prefix)
-	if (idx < len(p.prefix) && p.prefix[idx] == prefix) {
+	if idx < len(p.prefix) && p.prefix[idx] == prefix {
 		// delete prefix from p.prefix[]
 		a := p.prefix
 		a = append(a[:idx], a[idx+1:]...)
 		p.prefix = a
-		
+
 		// delete all etags of keys belonging to prefix
 		for _, k := range p.key[prefix] {
 			delete(p.etag, k)
@@ -102,7 +98,6 @@ func (p *storeCB) remove(prefix string) {
 	}
 	p.Unlock()
 }
-
 
 func (p *storeCB) insert(prefix string, key, etag []string) {
 
@@ -120,7 +115,7 @@ func (p *storeCB) insert(prefix string, key, etag []string) {
 	}
 
 	// insert prefix at p.prefix[idx]
-	a := make([]string, 0, len(p.prefix) + 1)
+	a := make([]string, 0, len(p.prefix)+1)
 	a = append(a, p.prefix[:idx]...)
 	a = append(a, prefix)
 	a = append(a, p.prefix[idx:]...)
@@ -129,14 +124,13 @@ func (p *storeCB) insert(prefix string, key, etag []string) {
 	// make a copy of key[] and save it
 	p.key[prefix] = make([]string, len(key))
 	copy(p.key[prefix], key)
-	
+
 	// for each key, save its corresponding etag
 	for i, k := range key {
 		p.etag[k] = etag[i]
 	}
 	p.Unlock()
 }
-
 
 func filter(a []string, test func(string) bool) (ret []string) {
 	for _, s := range a {
@@ -147,8 +141,7 @@ func filter(a []string, test func(string) bool) (ret []string) {
 	return
 }
 
-
-func (p *storeCB) retrieve(prefix string) (key []string, etag []string, ok bool)  {
+func (p *storeCB) retrieve(prefix string) (key []string, etag []string, ok bool) {
 	p.RLock()
 
 	kk := p.key[prefix]
@@ -172,5 +165,3 @@ func (p *storeCB) retrieve(prefix string) (key []string, etag []string, ok bool)
 	p.RUnlock()
 	return
 }
-
-

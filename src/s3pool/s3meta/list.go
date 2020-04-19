@@ -4,14 +4,13 @@ import (
 	"errors"
 )
 
-
 func (p *serverCB) list(req *requestType) (reply *replyType) {
 	reply = &replyType{}
 	if len(req.param) != 2 {
 		reply.err = errors.New("LIST requires param (bucket, prefix)")
 		return
 	}
-	
+
 	bucket, prefix := req.param[0], req.param[1]
 	store := getStore(bucket)
 	if key, etag, ok := store.retrieve(prefix); ok {
@@ -35,7 +34,7 @@ func (p *serverCB) list(req *requestType) (reply *replyType) {
 		reply = &replyType{err: err}
 		return
 	}
-	
+
 	store.insert(prefix, reply.key, reply.etag)
 	return
 }

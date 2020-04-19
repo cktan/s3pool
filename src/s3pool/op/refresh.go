@@ -38,8 +38,6 @@ func Refresh(args []string) (string, error) {
 		return "\n", nil
 	}
 
-	
-
 	numItems := 0
 	/*
 		log.Println("REFRESH start on", bucket)

@@ -2,10 +2,9 @@ package s3meta
 
 import "errors"
 
-
 func (p *serverCB) run() {
 	for {
-		req := <- p.ch
+		req := <-p.ch
 		switch req.command {
 		case "LIST":
 			req.reply <- p.list(req)

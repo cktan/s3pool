@@ -96,7 +96,7 @@ func Scan(bucket string, prefix string, filter func(string) bool) (key []string)
 				}
 			}
 		}
-		
+
 	} else {
 
 		key = make([]string, 0, 100)
@@ -116,10 +116,9 @@ func Scan(bucket string, prefix string, filter func(string) bool) (key []string)
 			}
 		}
 	}
-	
+
 	return
 }
-
 
 func Store(bucket string, key, etag []string, err error) {
 
@@ -140,8 +139,6 @@ func Store(bucket string, key, etag []string, err error) {
 	}
 }
 
-
-
 func Exists(bucket string) (ok bool, err error) {
 	if trace {
 		log.Println("Catalog.Exists", bucket)
@@ -160,4 +157,3 @@ func Exists(bucket string) (ok bool, err error) {
 	}
 	return
 }
-
