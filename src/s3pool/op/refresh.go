@@ -17,6 +17,7 @@ import (
 	"s3pool/cat"
 	"s3pool/conf"
 	"s3pool/s3"
+	"s3pool/s3meta"
 )
 
 /*
@@ -31,6 +32,13 @@ func Refresh(args []string) (string, error) {
 	}
 	bucket := args[0]
 	// DO NOT checkCatalog here. We will update it!
+
+	if cat.UseS3Meta {
+		s3meta.Invalidate(bucket)
+		return "\n", nil
+	}
+
+	
 
 	numItems := 0
 	/*

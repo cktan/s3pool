@@ -19,11 +19,11 @@ import (
 
 var bm = newBucketMap()
 var trace = true
-var useS3Meta = true
+var UseS3Meta = true
 
 func KnownBuckets() []string {
 	var ret []string
-	if useS3Meta {
+	if UseS3Meta {
 		ret = s3meta.KnownBuckets()
 	} else {
 		ret = bm.keys()
@@ -38,7 +38,7 @@ func Find(bucket, key string) (etag string) {
 			log.Println("Catalog.Find", bucket, key, " -- ", etag)
 		}()
 	}
-	if useS3Meta {
+	if UseS3Meta {
 		etag = s3meta.SearchExact(bucket, key)
 	} else {
 		km := bm.get(bucket)
@@ -53,7 +53,7 @@ func Upsert(bucket, key, etag string) {
 	if trace {
 		log.Println("Catalog.Update", bucket, key, etag)
 	}
-	if useS3Meta {
+	if UseS3Meta {
 		s3meta.SetETag(bucket, key, etag)
 	} else {
 		km := bm.get(bucket)
@@ -67,13 +67,14 @@ func Delete(bucket, key string) {
 	if trace {
 		log.Println("Catalog.Delete", bucket, key)
 	}
-
-	km := bm.get(bucket)
-	if km == nil {
-		return
+	if UseS3Meta {
+		s3meta.Delete(bucket, key)
+	} else {
+		km := bm.get(bucket)
+		if km != nil {
+			km.delete(key)
+		}
 	}
-
-	km.delete(key)
 }
 
 func Scan(bucket string, prefix string, filter func(string) bool) (key []string) {
@@ -81,47 +82,82 @@ func Scan(bucket string, prefix string, filter func(string) bool) (key []string)
 		log.Println("Catalog.Scan", bucket)
 	}
 
-	key = make([]string, 0, 100)
-	km := bm.get(bucket)
-	if km == nil {
-		return
-	}
+	if UseS3Meta {
 
-	item := km.searchPrefix(prefix)
-	if trace {
-		log.Println("Catalog.Scan bucket", bucket, "prefix", prefix, "found", len(item), "items")
-	}
-	for _, v := range item {
-		if v.ETag == "" {
-			continue
+		err, xkey, xetag := s3meta.List(bucket, prefix)
+		if err != nil {
+			log.Println("Error:", err)
+			key = make([]string, 0)
+		} else {
+			key = make([]string, 0, len(xkey))
+			for i := 0; i < len(xkey); i++ {
+				if xetag[i] != "" {
+					key = append(key, xkey[i])
+				}
+			}
 		}
-		if filter(v.Key) {
-			key = append(key, v.Key)
+		
+	} else {
+
+		key = make([]string, 0, 100)
+		km := bm.get(bucket)
+		if km != nil {
+			item := km.searchPrefix(prefix)
+			if trace {
+				log.Println("Catalog.Scan bucket", bucket, "prefix", prefix, "found", len(item), "items")
+			}
+			for _, v := range item {
+				if v.ETag == "" {
+					continue
+				}
+				if filter(v.Key) {
+					key = append(key, v.Key)
+				}
+			}
 		}
 	}
+	
 	return
 }
 
+
 func Store(bucket string, key, etag []string, err error) {
+
 	if trace {
 		log.Println("Catalog.Store", bucket, "#keys", len(key))
 	}
-	km, err := newKeyMap(key, etag, err)
-	if err != nil {
-		return
+
+	if UseS3Meta {
+		panic("do not call this when UseS3Meta")
+
+	} else {
+
+		km, err := newKeyMap(key, etag, err)
+		if err != nil {
+			return
+		}
+		bm.put(bucket, km)
 	}
-	bm.put(bucket, km)
 }
+
+
 
 func Exists(bucket string) (ok bool, err error) {
 	if trace {
 		log.Println("Catalog.Exists", bucket)
 	}
-	km := bm.get(bucket)
-	if km == nil {
+
+	if UseS3Meta {
+		ok = true
 		return
+
+	} else {
+		km := bm.get(bucket)
+		if km != nil {
+			ok = true
+			err = km.err
+		}
 	}
-	ok = true
-	err = km.err
 	return
 }
+

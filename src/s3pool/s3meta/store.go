@@ -17,6 +17,12 @@ type storeCB struct {
 var storeLock = sync.Mutex{}
 var storeList = make(map[string]*storeCB)
 
+func invalidate(bucket string) {
+	storeLock.Lock()
+	delete(storeList, bucket)
+	storeLock.Unlock()
+}
+
 func getKnownBuckets() []string {
 	storeLock.Lock()
 	list := make([]string, len(storeList))
@@ -28,7 +34,6 @@ func getKnownBuckets() []string {
 	storeLock.Unlock()
 	return list
 }
-
 
 
 func getStore(bucket string) *storeCB {
