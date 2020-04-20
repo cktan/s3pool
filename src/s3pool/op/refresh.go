@@ -14,9 +14,11 @@ package op
 
 import (
 	"errors"
+	"log"
 	"s3pool/cat"
-	"s3pool/s3"
 	"s3pool/conf"
+	"s3pool/s3"
+	"s3pool/s3meta"
 )
 
 /*
@@ -32,6 +34,11 @@ func Refresh(args []string) (string, error) {
 	bucket := args[0]
 	// DO NOT checkCatalog here. We will update it!
 
+	if cat.UseS3Meta {
+		log.Println(" ... invalidate s3meta bucket", bucket)
+		s3meta.Invalidate(bucket)
+		return "\n", nil
+	}
 
 	numItems := 0
 	/*
@@ -56,7 +63,7 @@ func Refresh(args []string) (string, error) {
 		numItems++
 	}
 
-	err := s3.ListObjects(bucket, save)
+	err := s3.ListObjects(bucket, "", save)
 	cat.Store(bucket, key, etag, err)
 
 	if err != nil {

@@ -64,6 +64,6 @@ func PutObject(bucket, key, fname string) error {
 	}
 
 	// reflect the new file in our catalog
-	cat.Update(bucket, key, "new")
+	cat.Upsert(bucket, key, "new")
 	return nil
 }

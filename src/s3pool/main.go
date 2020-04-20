@@ -24,6 +24,7 @@ import (
 	"s3pool/mon"
 	"s3pool/op"
 	"s3pool/pidfile"
+	"s3pool/s3meta"
 	"s3pool/tcp_server"
 	"strings"
 	"time"
@@ -139,11 +140,11 @@ func serve(c *tcp_server.Client, request string) {
 }
 
 type progArgs struct {
-	port       *int
-	dir        *string
-	noDaemon   *bool
-	daemonPrep *bool
-	pidFile    *string
+	port            *int
+	dir             *string
+	noDaemon        *bool
+	daemonPrep      *bool
+	pidFile         *string
 	pullConcurrency *int
 }
 
@@ -153,21 +154,21 @@ func parseArgs() (p progArgs, err error) {
 	p.noDaemon = flag.Bool("n", false, "do not run as daemon")
 	p.daemonPrep = flag.Bool("daemonprep", false, "internal, do not use")
 	p.pidFile = flag.String("pidfile", "", "store pid in this path")
-	p.pullConcurrency  = flag.Int("c", 20, "maximum concurrent pull from s3")
+	p.pullConcurrency = flag.Int("c", 20, "maximum concurrent pull from s3")
 
 	flag.Parse()
 
 	if len(flag.Args()) != 0 {
-		err = errors.New("Extra arguments")
+		err = errors.New("Extra arguments.")
 		return
 	}
 
 	if !(0 < *p.port && *p.port <= 65535) {
-		err = errors.New("Missing or invalid port number")
+		err = errors.New("Missing or invalid port number.")
 		return
 	}
 	if "" == *p.dir {
-		err = errors.New("Missing or invalid home directory path")
+		err = errors.New("Missing or invalid home directory path.")
 		return
 	}
 
@@ -203,7 +204,9 @@ func main() {
 	// check flags
 	p, err := parseArgs()
 	if err != nil {
-		exit(err.Error())
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
+		fmt.Fprintf(os.Stderr, "For usage info, run with '--help' flag.\n\n")
+		os.Exit(1)
 	}
 
 	// get into the home dir
@@ -261,6 +264,8 @@ func main() {
 
 	// start Bucket monitor
 	conf.BucketmonChannel = mon.Bucketmon()
+
+	s3meta.Initialize(29)
 
 	// start server
 	server, err := tcp_server.New(fmt.Sprintf("0.0.0.0:%d", *p.port), serve)

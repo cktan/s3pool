@@ -10,27 +10,30 @@
  *  GPL. To inquire about commercial license, please send email to
  *  cktanx@gmail.com.
  */
-package s3
+package s3meta
 
 import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 )
 
-type ListRecord struct {
+type listRec struct {
 	Key  string
 	Etag string
 }
 
-type ListCollection struct {
-	Contents []ListRecord
+type listCollection struct {
+	Contents []listRec
 }
 
-func ListObjects(bucket string, prefix string, notify func(key, etag string)) error {
+func s3ListObjects(bucket string, prefix string, notify func(key, etag string)) error {
 	var err error
+
+	log.Println("s3ListObjects", bucket, prefix)
 
 	// invoke s3api to list objects
 	var cmd *exec.Cmd

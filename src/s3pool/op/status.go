@@ -13,15 +13,15 @@
 package op
 
 import (
+	"fmt"
 	"s3pool/conf"
 	"strings"
-	"fmt"
 )
 
 func Status(_ []string) (string, error) {
 
 	var reply strings.Builder
-	
+
 	fmt.Fprintf(&reply, "count_glob %v\n", conf.CountGlob)
 	fmt.Fprintf(&reply, "count_pull %v\n", conf.CountPull)
 	fmt.Fprintf(&reply, "count_pull_hit %v\n", conf.CountPullHit)

@@ -13,7 +13,6 @@
 package op
 
 import (
-	"log"
 	"os"
 	"s3pool/cat"
 	"s3pool/conf"
@@ -70,6 +69,5 @@ func checkCatalog(bucket string) error {
 		}
 	}
 
-	log.Println("Refreshed due to missing catalog")
 	return nil
 }

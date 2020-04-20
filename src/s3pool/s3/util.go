@@ -82,3 +82,11 @@ func mapToPath(bucket, key string) (path string, err error) {
 	path, err = filepath.Abs(fmt.Sprintf("data/%s/%s", bucket, key))
 	return
 }
+
+func fileReadable(path string) bool {
+	f, err := os.Open(path)
+	if err == nil {
+		f.Close()
+	}
+	return err == nil
+}

@@ -20,16 +20,23 @@ import (
 	"strings"
 )
 
+func globPrefix(pattern string) string {
+	s := pattern
+	s = strings.SplitN(s, "*", 2)[0]
+	s = strings.SplitN(s, "?", 2)[0]
+	return s
+}
+
 func Glob(args []string) (string, error) {
 	conf.CountGlob++
-	
+
 	var err error
 
 	if len(args) != 2 {
 		return "", errors.New("expects 2 arguments for GLOB")
 	}
 	bucket, pattern := args[0], args[1]
-	
+
 	if err = checkCatalog(bucket); err != nil {
 		return "", err
 	}
@@ -43,7 +50,7 @@ func Glob(args []string) (string, error) {
 	filter := func(key string) bool {
 		return g.Match(key)
 	}
-	key := cat.Scan(bucket, filter)
+	key := cat.Scan(bucket, globPrefix(pattern), filter)
 
 	var replyBuilder strings.Builder
 	for i := range key {

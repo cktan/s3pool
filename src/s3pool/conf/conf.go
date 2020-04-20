@@ -24,10 +24,9 @@ var Master string
 var Standby string
 var CountPull int64
 var CountPullHit int64
-var CountRefresh  int64
+var CountRefresh int64
 var CountPush int64
 var CountGlob int64
-
 
 func Verbose(level int) bool {
 	return VerboseLevel >= level
