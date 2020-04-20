@@ -3,7 +3,6 @@ package s3meta
 import (
 	"strings"
 	"sync"
-	"log"
 )
 
 type storeCB struct {
@@ -147,10 +146,10 @@ func (p *storeCB) retrieve(prefix string) (key []string, etag []string, ok bool)
 	if kk == nil {
 		// if we have [/A, /B, /C] in existing prefix, then
 		// searching for /A/X/Y should match /A
-		idx := bisectLeft(p.prefix, prefix) 
-		idx--;
+		idx := bisectLeft(p.prefix, prefix)
+		idx--
 		if 0 <= idx && idx < len(p.prefix) {
-			if (strings.HasPrefix(prefix, p.prefix[idx])) {
+			if strings.HasPrefix(prefix, p.prefix[idx]) {
 				kk = filter(p.key[p.prefix[idx]], func(s string) bool {
 					return strings.HasPrefix(s, prefix)
 				})

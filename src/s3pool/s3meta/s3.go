@@ -34,7 +34,7 @@ func s3ListObjects(bucket string, prefix string, notify func(key, etag string)) 
 	var err error
 
 	log.Println("s3ListObjects", bucket, prefix)
-	
+
 	// invoke s3api to list objects
 	var cmd *exec.Cmd
 	if prefix == "" {

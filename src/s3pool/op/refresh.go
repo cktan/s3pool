@@ -13,8 +13,8 @@
 package op
 
 import (
-	"log"
 	"errors"
+	"log"
 	"s3pool/cat"
 	"s3pool/conf"
 	"s3pool/s3"

@@ -90,4 +90,3 @@ func fileReadable(path string) bool {
 	}
 	return err == nil
 }
-		
