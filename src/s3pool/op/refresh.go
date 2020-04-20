@@ -13,6 +13,7 @@
 package op
 
 import (
+	"log"
 	"errors"
 	"s3pool/cat"
 	"s3pool/conf"
@@ -34,6 +35,7 @@ func Refresh(args []string) (string, error) {
 	// DO NOT checkCatalog here. We will update it!
 
 	if cat.UseS3Meta {
+		log.Println(" ... invalidate s3meta bucket", bucket)
 		s3meta.Invalidate(bucket)
 		return "\n", nil
 	}

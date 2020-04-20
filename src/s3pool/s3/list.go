@@ -16,9 +16,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"log"
 	"os/exec"
-	"s3pool/conf"
 	"strings"
 )
 
@@ -32,10 +30,6 @@ type ListCollection struct {
 }
 
 func ListObjects(bucket string, prefix string, notify func(key, etag string)) error {
-	if conf.Verbose(1) {
-		log.Println("s3 list-objects", bucket)
-	}
-
 	var err error
 
 	// invoke s3api to list objects

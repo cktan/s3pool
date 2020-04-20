@@ -3,6 +3,7 @@ package s3meta
 import (
 	"strings"
 	"sync"
+	"log"
 )
 
 type storeCB struct {
@@ -70,9 +71,7 @@ func bisectLeft(arr []string, x string) int {
 }
 
 func (p *storeCB) setETag(key string, etag string) {
-	if _, ok := p.etag[key]; ok {
-		p.etag[key] = etag
-	}
+	p.etag[key] = etag
 }
 
 func (p *storeCB) getETag(key string) string {
@@ -145,13 +144,17 @@ func (p *storeCB) retrieve(prefix string) (key []string, etag []string, ok bool)
 	p.RLock()
 
 	kk := p.key[prefix]
-	if kk != nil {
-		idx := bisectLeft(p.prefix, prefix)
-		if idx < len(p.prefix) && strings.HasPrefix(prefix, p.prefix[idx]) {
-			// search for /A/B/C should match /A
-			kk = filter(p.key[p.prefix[idx]], func(s string) bool {
-				return strings.HasPrefix(s, prefix)
-			})
+	if kk == nil {
+		// if we have [/A, /B, /C] in existing prefix, then
+		// searching for /A/X/Y should match /A
+		idx := bisectLeft(p.prefix, prefix) 
+		idx--;
+		if 0 <= idx && idx < len(p.prefix) {
+			if (strings.HasPrefix(prefix, p.prefix[idx])) {
+				kk = filter(p.key[p.prefix[idx]], func(s string) bool {
+					return strings.HasPrefix(s, prefix)
+				})
+			}
 		}
 	}
 

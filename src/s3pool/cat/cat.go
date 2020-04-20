@@ -140,10 +140,6 @@ func Store(bucket string, key, etag []string, err error) {
 }
 
 func Exists(bucket string) (ok bool, err error) {
-	if trace {
-		log.Println("Catalog.Exists", bucket)
-	}
-
 	if UseS3Meta {
 		ok = true
 		return

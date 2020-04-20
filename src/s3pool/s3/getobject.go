@@ -54,6 +54,14 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 	etag := extractETag(metapath)
 	catetag := cat.Find(bucket, key)
 
+	// check that destination path exists
+	if !fileReadable(path) {
+		if conf.Verbose(1) {
+			log.Println(" ... file does not exist")
+		}
+		etag = ""
+	}
+
 	// If etag did not change, don't go fetch it
 	if etag != "" && etag == catetag && !force {
 		if conf.Verbose(1) {
@@ -88,28 +96,28 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 	var outbuf, errbuf bytes.Buffer
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
-	err = cmd.Run()
-	errstr := string(errbuf.Bytes())
-	notModified := strings.Contains(errstr, "Not Modified") && strings.Contains(errstr, "(304)")
-	if notModified {
-		// File was cached and was not modified at source
-		if conf.Verbose(1) {
-			log.Println(" ... file not modified")
+	if err = cmd.Run(); err != nil {
+		errstr := string(errbuf.Bytes())
+		notModified := strings.Contains(errstr, "Not Modified") && strings.Contains(errstr, "(304)")
+		if notModified {
+			// File was cached and was not modified at source
+			err = nil
+			if conf.Verbose(1) {
+				log.Println(" ... file not modified")
+			}
+			log.Println("   ... etag", etag)
+			log.Println("   ... catetag", catetag)
+			if etag != catetag && etag != "" {
+				log.Println(" ... update", key, etag)
+				cat.Upsert(bucket, key, etag)
+			}
+			retpath = path
+			return
 		}
-		//log.Println("   ... etag", etag)
-		//log.Println("   ... catetag", catetag)
-		if etag != catetag && etag != "" {
-			//log.Println(" ... update", key, etag)
-			cat.Upsert(bucket, key, etag)
+		noSuchKey := strings.Contains(errstr, "NoSuchKey")
+		if noSuchKey {
+			cat.Delete(bucket, key)
 		}
-		retpath = path
-		return
-	}
-	noSuchKey := strings.Contains(errstr, "NoSuchKey")
-	if noSuchKey {
-		cat.Delete(bucket, key)
-	}
-	if err != nil {
 		err = fmt.Errorf("aws s3api get-object failed -- %s", errstr)
 		return
 	}

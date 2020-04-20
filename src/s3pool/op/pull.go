@@ -47,6 +47,7 @@ func Pull(args []string) (string, error) {
 		waitGroup.Done()
 	}
 
+	// download nkeys in parallel
 	waitGroup.Add(nkeys)
 	for i := 0; i < nkeys; i++ {
 		pullQueue.Add(dowork, i)
