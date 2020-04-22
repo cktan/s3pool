@@ -36,10 +36,7 @@ func PutObject(bucket, key, fname string) error {
 	}
 
 	// lock to serialize on (bucket,key)
-	lockname, err := strlock.Lock(bucket + ":" + key)
-	if err != nil {
-		return err
-	}
+	lockname := strlock.Lock(bucket + ":" + key)
 	defer strlock.Unlock(lockname)
 
 	// we need to remove the file and meta file from cache if they are there

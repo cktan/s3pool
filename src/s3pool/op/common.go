@@ -45,10 +45,7 @@ func fileMtimeSince(path string) (time.Duration, error) {
 func checkCatalog(bucket string) error {
 
 	// serialize refresh on bucket
-	lockname, err := strlock.Lock("refresh " + bucket)
-	if err != nil {
-		return err
-	}
+	lockname := strlock.Lock("refresh " + bucket)
 	defer strlock.Unlock(lockname)
 
 	ok, err := cat.Exists(bucket)

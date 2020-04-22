@@ -26,14 +26,14 @@ func init() {
 	tabcond = sync.NewCond(&tabmux)
 }
 
-func Lock(s string) (*string, error) {
+func Lock(s string) *string {
 	tabmux.Lock()
 	defer tabmux.Unlock()
 	for tab[s] {
 		tabcond.Wait()
 	}
 	tab[s] = true
-	return &s, nil
+	return &s
 }
 
 func Unlock(s *string) {
@@ -45,7 +45,7 @@ func Unlock(s *string) {
 
 func Test() {
 	f := func(id int) {
-		key, _ := Lock("abcd")
+		key := Lock("abcd")
 		time.Sleep(time.Second * 2)
 		fmt.Println(id, " up")
 		Unlock(key)

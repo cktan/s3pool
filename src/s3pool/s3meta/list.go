@@ -1,40 +1,28 @@
 package s3meta
 
-import (
-	"errors"
-)
 
-func (p *serverCB) list(req *requestType) (reply *replyType) {
-	reply = &replyType{}
-	if len(req.param) != 2 {
-		reply.err = errors.New("LIST requires param (bucket, prefix)")
-		return
-	}
-
-	bucket, prefix := req.param[0], req.param[1]
+func list(bucket, prefix string) (key, etag []string, err error) {
 	store := getStore(bucket)
-	if key, etag, ok := store.retrieve(prefix); ok {
-		reply.key = make([]string, len(key))
-		copy(reply.key, key)
-		reply.etag = make([]string, len(etag))
-		copy(reply.etag, etag)
+	if xkey, xetag, ok := store.retrieve(prefix); ok {
+		// make a copy of key and etag
+		key = append(xkey[:0:0], xkey...) 
+		etag = append(xetag[:0:0], xetag...)
 		return
 	}
 
-	err := s3ListObjects(bucket, prefix, func(k, t string) {
+	err = s3ListObjects(bucket, prefix, func(k, t string) {
 		if k[len(k)-1] == '/' {
 			// skip DIR
 			return
 		}
-		reply.key = append(reply.key, k)
-		reply.etag = append(reply.etag, t)
+		key = append(key, k)
+		etag = append(etag, t)
 	})
 
 	if err != nil {
-		reply = &replyType{err: err}
 		return
 	}
 
-	store.insert(prefix, reply.key, reply.etag)
+	store.insert(prefix, key, etag)
 	return
 }

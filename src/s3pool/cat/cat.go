@@ -84,7 +84,7 @@ func Scan(bucket string, prefix string, filter func(string) bool) (key []string)
 
 	if UseS3Meta {
 
-		err, xkey, xetag := s3meta.List(bucket, prefix)
+		xkey, xetag, err := s3meta.List(bucket, prefix)
 		if err != nil {
 			log.Println("Error:", err)
 			key = make([]string, 0)

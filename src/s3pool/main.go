@@ -24,7 +24,6 @@ import (
 	"s3pool/mon"
 	"s3pool/op"
 	"s3pool/pidfile"
-	"s3pool/s3meta"
 	"s3pool/tcp_server"
 	"strings"
 	"time"
@@ -264,8 +263,6 @@ func main() {
 
 	// start Bucket monitor
 	conf.BucketmonChannel = mon.Bucketmon()
-
-	s3meta.Initialize(29)
 
 	// start server
 	server, err := tcp_server.New(fmt.Sprintf("0.0.0.0:%d", *p.port), serve)

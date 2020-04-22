@@ -36,10 +36,7 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 	}
 
 	// lock to serialize pull on same (bucket,key)
-	lockname, err := strlock.Lock(bucket + ":" + key)
-	if err != nil {
-		return
-	}
+	lockname := strlock.Lock(bucket + ":" + key)
 	defer strlock.Unlock(lockname)
 
 	// Get destination path
