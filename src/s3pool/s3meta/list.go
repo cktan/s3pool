@@ -1,11 +1,10 @@
 package s3meta
 
-
 func list(bucket, prefix string) (key, etag []string, err error) {
 	store := getStore(bucket)
 	if xkey, xetag, ok := store.retrieve(prefix); ok {
 		// make a copy of key and etag
-		key = append(xkey[:0:0], xkey...) 
+		key = append(xkey[:0:0], xkey...)
 		etag = append(xetag[:0:0], xetag...)
 		return
 	}

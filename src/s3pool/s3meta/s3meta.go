@@ -4,7 +4,6 @@ import (
 	"s3pool/strlock"
 )
 
-
 func KnownBuckets() []string {
 	return getKnownBuckets()
 }
