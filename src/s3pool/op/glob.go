@@ -1,6 +1,6 @@
-/*
+/**
  *  S3pool - S3 cache on local disk
- *  Copyright (c) 2019 CK Tan
+ *  Copyright (c) 2019-2020 CK Tan
  *  cktanx@gmail.com
  *
  *  S3Pool can be used for free under the GNU General Public License
@@ -47,9 +47,11 @@ func Glob(args []string) (string, error) {
 		return g.Match(key)
 	}
 
+	// get list of potential matches
 	prefix := globPrefix(pattern)
 	key, err := s3meta.List(bucket, prefix)
 
+	// filter the matches; return only those that matched
 	var replyBuilder strings.Builder
 	for _, k := range key {
 		if filter(k) {

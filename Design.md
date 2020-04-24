@@ -3,7 +3,7 @@
 ## License
 
     S3Pool -- a S3 cache on local disk
-    Copyright (c) 2019 CK Tan
+    Copyright (c) 2019-2020 CK Tan
     cktanx@gmail.com
   
     S3Pool can be used for free under the GNU General Public License
@@ -26,14 +26,6 @@ The homedir shall have the following subdirectories:
 + tmp : where temp files reside
 + data : subdirs in `data/` are BUCKETDIRs, which contain files in
 their respective buckets
-
-
-## BUCKETDIR
-
-A special `__list__` file is maintained in each BUCKETDIR, and is
-updated when the REFRESH command is given. It contains a full listing
-of all keys in the bucket, delimited by a NEWLINE character. The
-DQUOTE char and NEWLINE char are not expected to be part of key names.
 
 
 ## Object Files
@@ -70,11 +62,8 @@ error message.
 
 ### REFRESH
 
-
-Refresh the `__list__` file of a bucket. This file will rot over time,
-and user should schedule a CRON job to call REFRESH from time to
-time. If there are multiple s3pools serving the same bucket, the
-REFRESH need to be scheduled on only one of the s3pool servers.
+Refresh the internal dictionary on known files in a bucket. This file
+will rot over time, and is refreshed automatically from time to time.
 
 Syntax: ["REFRESH", "bucket"]
 
@@ -85,14 +74,10 @@ Returns a list of keys matching a glob pattern.
 
 SYNTAX: ["GLOB", "bucket", "pattern"]
 
-This will result in a call to REFRESH if the __list__ file does not
-exist.
-
-
 
 ### PULL 
 
-If the file is cached AND is unchanged on S3, return it.
+If the file is cached AND is unchanged on S3, return a path to it.
 Otherwise, pull the file from S3.
 
 Syntax: ["PULL", "bucket-name", "key-name", "key-name-2"]
@@ -105,7 +90,7 @@ The reply is an absolute path in the local filesystem that the user
 can use to access the S3 object corresponding to `key-name`.
 
 Note: only check if file is unchanged on S3 if the file was not cached
-recently (2 minutes).
+recently.
 
 
 ### PUSH 

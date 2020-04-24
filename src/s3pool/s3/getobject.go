@@ -1,6 +1,6 @@
-/*
+/**
  *  S3pool - S3 cache on local disk
- *  Copyright (c) 2019 CK Tan
+ *  Copyright (c) 2019-2020 CK Tan
  *  cktanx@gmail.com
  *
  *  S3Pool can be used for free under the GNU General Public License
@@ -66,7 +66,7 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 		// because the file may have changed on S3. We hope that the
 		// etag in Catalog is refreshed from time to time.
 		if conf.Verbose(1) {
-			log.Println(" ... cache hit:", key)f
+			log.Println(" ... cache hit:", key)
 		}
 		retpath = path
 		hit = true

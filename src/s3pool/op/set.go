@@ -1,6 +1,6 @@
-/*
+/**
  *  S3pool - S3 cache on local disk
- *  Copyright (c) 2019 CK Tan
+ *  Copyright (c) 2019-2020 CK Tan
  *  cktanx@gmail.com
  *
  *  S3Pool can be used for free under the GNU General Public License
