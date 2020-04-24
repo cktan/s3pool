@@ -1,12 +1,15 @@
 package s3meta
 
 import (
+	"s3pool/conf"
 	"strings"
 	"sync"
+	"time"
 )
 
 type storeCB struct {
 	sync.RWMutex
+	timeout int
 
 	prefix []string
 	key    map[string]([]string) // prefix -> keys
@@ -16,12 +19,32 @@ type storeCB struct {
 var storeLock = sync.Mutex{}
 var storeList = make(map[string]*storeCB)
 
+var initialized = false
+
 func invalidate(bucket string) {
 	storeLock.Lock()
 	delete(storeList, bucket)
 	storeLock.Unlock()
 }
 
+func tick() {
+	for {
+		select {
+		case <- time.After(10 * time.Second):
+			storeLock.Lock()
+			for bucket := range storeList {
+				p := storeList[bucket]
+				p.timeout -= 10
+				if p.timeout <= 0 {
+					delete(storeList, bucket)
+				}
+			}
+			storeLock.Unlock()
+		}
+	}
+}
+
+/*
 func getKnownBuckets() []string {
 	storeLock.Lock()
 	list := make([]string, len(storeList))
@@ -33,9 +56,14 @@ func getKnownBuckets() []string {
 	storeLock.Unlock()
 	return list
 }
+*/
 
 func getStore(bucket string) *storeCB {
 	storeLock.Lock()
+	if !initialized {
+		go tick()
+		initialized = true
+	}
 	x := storeList[bucket]
 	if x == nil {
 		x = newStore()
@@ -51,6 +79,7 @@ func newStore() *storeCB {
 	p.prefix = make([]string, 0, 10)
 	p.key = make(map[string]([]string))
 	p.etag = make(map[string]string)
+	p.timeout = conf.RefreshInterval * 60 // timeout in seconds
 	return &p
 }
 
@@ -69,11 +98,11 @@ func bisectLeft(arr []string, x string) int {
 	return lo
 }
 
-func (p *storeCB) setETag(key string, etag string) {
+func (p *storeCB) set(key string, etag string) {
 	p.etag[key] = etag
 }
 
-func (p *storeCB) getETag(key string) string {
+func (p *storeCB) get(key string) string {
 	return p.etag[key]
 }
 

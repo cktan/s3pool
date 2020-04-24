@@ -16,7 +16,6 @@ import "time"
 
 var VerboseLevel = 1
 var RefreshInterval = 15 // in minutes
-var BucketmonChannel chan<- string
 var PullConcurrency = 20
 var UpSince = time.Now()
 var IsMaster bool
@@ -30,8 +29,4 @@ var CountGlob int64
 
 func Verbose(level int) bool {
 	return VerboseLevel >= level
-}
-
-func NotifyBucketmon(bkt string) {
-	BucketmonChannel <- bkt
 }

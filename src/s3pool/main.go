@@ -122,9 +122,6 @@ func serve(c *tcp_server.Client, request string) {
 		reply, err = op.Pull(cmdargs)
 	case "GLOB":
 		reply, err = op.Glob(cmdargs)
-		if err == nil {
-			conf.NotifyBucketmon(cmdargs[0])
-		}
 	case "REFRESH":
 		reply, err = op.Refresh(cmdargs)
 	case "PUSH":
@@ -133,6 +130,14 @@ func serve(c *tcp_server.Client, request string) {
 		reply, err = op.Set(cmdargs)
 	case "STATUS":
 		reply, err = op.Status(cmdargs)
+	case "_GETETAG":
+		reply, err = op.GetETag(cmdargs)
+	case "_SETETAG":
+		reply, err = op.SetETag(cmdargs)
+	case "_REMOVEKEY":
+		reply, err = op.RemoveKey(cmdargs)
+	case "_LISTPREFIX":
+		reply, err = op.ListPrefix(cmdargs)
 	default:
 		err = errors.New("Bad command: " + cmd)
 	}
@@ -260,9 +265,6 @@ func main() {
 
 	// start pidfile monitor
 	mon.Pidmon()
-
-	// start Bucket monitor
-	conf.BucketmonChannel = mon.Bucketmon()
 
 	// start server
 	server, err := tcp_server.New(fmt.Sprintf("0.0.0.0:%d", *p.port), serve)

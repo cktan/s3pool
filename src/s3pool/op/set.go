@@ -50,7 +50,6 @@ func Set(args []string) (string, error) {
 			i = 2 // minimum
 		}
 		conf.RefreshInterval = i
-		conf.BucketmonChannel <- ""
 		return "\n", nil
 	}
 

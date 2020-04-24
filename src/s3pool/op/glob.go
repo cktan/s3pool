@@ -15,8 +15,8 @@ package op
 import (
 	"errors"
 	"github.com/cktan/glob"
-	"s3pool/cat"
 	"s3pool/conf"
+	"s3pool/s3meta"
 	"strings"
 )
 
@@ -37,10 +37,6 @@ func Glob(args []string) (string, error) {
 	}
 	bucket, pattern := args[0], args[1]
 
-	if err = checkCatalog(bucket); err != nil {
-		return "", err
-	}
-
 	// prepare the pattern glob
 	g, err := glob.Compile(pattern, '/')
 	if err != nil {
@@ -50,12 +46,16 @@ func Glob(args []string) (string, error) {
 	filter := func(key string) bool {
 		return g.Match(key)
 	}
-	key := cat.Scan(bucket, globPrefix(pattern), filter)
+
+	prefix := globPrefix(pattern)
+	key, err := s3meta.List(bucket, prefix)
 
 	var replyBuilder strings.Builder
-	for i := range key {
-		replyBuilder.WriteString(key[i])
-		replyBuilder.WriteString("\n")
+	for _, k := range key {
+		if filter(k) {
+			replyBuilder.WriteString(k)
+			replyBuilder.WriteString("\n")
+		}
 	}
 
 	return replyBuilder.String(), nil

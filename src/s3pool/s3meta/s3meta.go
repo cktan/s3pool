@@ -4,33 +4,31 @@ import (
 	"s3pool/strlock"
 )
 
-func KnownBuckets() []string {
-	return getKnownBuckets()
-}
-
-func Invalidate(bucket string) {
+func Drop(bucket string) {
 	invalidate(bucket)
 }
 
-func SearchExact(bucket, key string) (etag string) {
+func Get(bucket, key string) (etag string) {
 	store := getStore(bucket)
-	etag = store.getETag(key)
+	etag = store.get(key)
 	return
 }
 
-func SetETag(bucket, key, etag string) {
+func Set(bucket, key, etag string) {
 	store := getStore(bucket)
-	store.setETag(key, etag)
+	store.set(key, etag)
 }
 
-func Delete(bucket, key string) {
+func Remove(bucket, key string) {
 	store := getStore(bucket)
-	store.setETag(key, "")
+	store.set(key, "")
 }
 
-func List(bucket string, prefix string) (key, etag []string, err error) {
+func List(bucket string, prefix string) (key []string, err error) {
 	lock := strlock.Lock("s3meta/" + bucket + "/" + prefix)
-	key, etag, err = list(bucket, prefix)
+	key, err = list(bucket, prefix)
 	strlock.Unlock(lock)
 	return
 }
+
+

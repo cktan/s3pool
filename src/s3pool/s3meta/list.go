@@ -1,14 +1,19 @@
 package s3meta
 
-func list(bucket, prefix string) (key, etag []string, err error) {
+func list(bucket, prefix string) (key []string, err error) {
 	store := getStore(bucket)
 	if xkey, xetag, ok := store.retrieve(prefix); ok {
-		// make a copy of key and etag
-		key = append(xkey[:0:0], xkey...)
-		etag = append(xetag[:0:0], xetag...)
+		// make a copy of key
+		key = make([]string, 0, len(xkey))
+		for i := range xkey {
+			if xetag[i] != "" {
+				key = append(key, xkey[i])
+			}
+		}
 		return
 	}
 
+	var etag []string
 	err = s3ListObjects(bucket, prefix, func(k, t string) {
 		if k[len(k)-1] == '/' {
 			// skip DIR

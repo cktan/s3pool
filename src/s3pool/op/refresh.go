@@ -15,9 +15,7 @@ package op
 import (
 	"errors"
 	"log"
-	"s3pool/cat"
 	"s3pool/conf"
-	"s3pool/s3"
 	"s3pool/s3meta"
 )
 
@@ -34,41 +32,7 @@ func Refresh(args []string) (string, error) {
 	bucket := args[0]
 	// DO NOT checkCatalog here. We will update it!
 
-	if cat.UseS3Meta {
-		log.Println(" ... invalidate s3meta bucket", bucket)
-		s3meta.Invalidate(bucket)
-		return "\n", nil
-	}
-
-	numItems := 0
-	/*
-		log.Println("REFRESH start on", bucket)
-		startTime := time.Now()
-		defer func() {
-			endTime := time.Now()
-			elapsed := int(endTime.Sub(startTime) / time.Millisecond)
-			log.Printf("REFRESH fin on %s, %d items, elapsed %d ms\n", bucket, numItems, elapsed)
-		}()
-	*/
-
-	key := make([]string, 0, 100)
-	etag := make([]string, 0, 100)
-	save := func(k, t string) {
-		if k[len(k)-1] == '/' {
-			// skip DIR
-			return
-		}
-		key = append(key, k)
-		etag = append(etag, t)
-		numItems++
-	}
-
-	err := s3.ListObjects(bucket, "", save)
-	cat.Store(bucket, key, etag, err)
-
-	if err != nil {
-		return "", err
-	}
-
+	log.Println(" ... invalidate s3meta bucket", bucket)
+	s3meta.Drop(bucket)
 	return "\n", nil
 }

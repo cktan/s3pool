@@ -14,9 +14,6 @@ package op
 
 import (
 	"os"
-	"s3pool/cat"
-	"s3pool/conf"
-	"s3pool/strlock"
 	"syscall"
 	"time"
 )
@@ -39,32 +36,4 @@ func fileMtimeSince(path string) (time.Duration, error) {
 		return 0, err
 	}
 	return time.Since(mtime), nil
-}
-
-// Check that we have a catalog on bucket. If not, create it.
-func checkCatalog(bucket string) error {
-
-	// serialize refresh on bucket
-	lockname := strlock.Lock("refresh " + bucket)
-	defer strlock.Unlock(lockname)
-
-	ok, err := cat.Exists(bucket)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		// notify bucketmon; it will invoke refresh to create entry in catalog.
-		conf.NotifyBucketmon(bucket)
-
-		// wait for it
-		for !ok {
-			time.Sleep(time.Second)
-			ok, err = cat.Exists(bucket)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }

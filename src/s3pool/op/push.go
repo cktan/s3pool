@@ -28,10 +28,6 @@ func Push(args []string) (string, error) {
 	if len(path) > 0 && path[0] != '/' {
 		return "", fmt.Errorf("Path parameter must be an absolute path")
 	}
-	if err := checkCatalog(bucket); err != nil {
-		return "", err
-	}
-
 	err := s3.PutObject(bucket, key, path)
 	if err != nil {
 		return "", err

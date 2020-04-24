@@ -29,9 +29,6 @@ func Pull(args []string) (string, error) {
 		return "", errors.New("Expected at least 2 arguments for PULL")
 	}
 	bucket, keys := args[0], args[1:]
-	if err := checkCatalog(bucket); err != nil {
-		return "", err
-	}
 
 	nkeys := len(keys)
 	path := make([]string, nkeys)
