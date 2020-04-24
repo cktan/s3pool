@@ -23,7 +23,7 @@ type storeCB struct {
 	sync.RWMutex
 	timeout int
 
-	prefix []string
+	prefix []string		     // sorted!
 	key    map[string]([]string) // prefix -> keys
 	etag   map[string]string     // key -> etag
 }
@@ -32,6 +32,7 @@ var storeLock = sync.Mutex{}
 var storeList = make(map[string]*storeCB)
 
 var initialized = false
+var checkSorted = true		// remove this flag later
 
 func invalidate(bucket string) {
 	storeLock.Lock()
@@ -55,6 +56,8 @@ func tick() {
 		}
 	}
 }
+
+
 
 /*
 func getKnownBuckets() []string {
@@ -110,6 +113,16 @@ func bisectLeft(arr []string, x string) int {
 	return lo
 }
 
+func (p *storeCB) isPrefixSorted() bool {
+	for i := range p.prefix {
+		j := i + 1
+		if j < len(p.prefix) && p.prefix[i] >= p.prefix[j] {
+			return false
+		}
+	}
+	return true
+}
+
 func (p *storeCB) set(key string, etag string) {
 	p.etag[key] = etag
 }
@@ -134,7 +147,16 @@ func (p *storeCB) remove(prefix string) {
 
 		// delete all keys of prefix
 		delete(p.key, prefix)
+
+		// sanity check. remove later.
+		if checkSorted {
+			if !p.isPrefixSorted() {
+				panic("not sorted!")
+			}
+		}
 	}
+
+
 	p.Unlock()
 }
 
@@ -168,6 +190,14 @@ func (p *storeCB) insert(prefix string, key, etag []string) {
 	for i, k := range key {
 		p.etag[k] = etag[i]
 	}
+
+	// sanity check. remove later.
+	if checkSorted {
+		if !p.isPrefixSorted() {
+			panic("not sorted!")
+		}
+	}
+	
 	p.Unlock()
 }
 
