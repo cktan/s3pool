@@ -59,10 +59,14 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 		etag = ""
 	}
 
-	// If etag did not change, don't go fetch it
+	// If the file's etag and our catalog's etag matched, don't go fetch it
 	if etag != "" && etag == catetag && !force {
+		// this optimization completely avoids a call to S3, so it
+		// is rather important. We can't just rely on the file's etag
+		// because the file may have changed on S3. We hope that the
+		// etag in Catalog is refreshed from time to time.
 		if conf.Verbose(1) {
-			log.Println(" ... cache hit:", key)
+			log.Println(" ... cache hit:", key)f
 		}
 		retpath = path
 		hit = true
