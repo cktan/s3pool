@@ -42,5 +42,3 @@ func List(bucket string, prefix string) (key []string, err error) {
 	strlock.Unlock(lock)
 	return
 }
-
-

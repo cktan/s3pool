@@ -23,7 +23,7 @@ type storeCB struct {
 	sync.RWMutex
 	timeout int
 
-	prefix []string		     // sorted!
+	prefix []string              // sorted!
 	key    map[string]([]string) // prefix -> keys
 	etag   map[string]string     // key -> etag
 }
@@ -32,7 +32,7 @@ var storeLock = sync.Mutex{}
 var storeList = make(map[string]*storeCB)
 
 var initialized = false
-var checkSorted = true		// remove this flag later
+var checkSorted = true // remove this flag later
 
 func invalidate(bucket string) {
 	storeLock.Lock()
@@ -43,7 +43,7 @@ func invalidate(bucket string) {
 func tick() {
 	for {
 		select {
-		case <- time.After(10 * time.Second):
+		case <-time.After(10 * time.Second):
 			storeLock.Lock()
 			for bucket := range storeList {
 				p := storeList[bucket]
@@ -56,8 +56,6 @@ func tick() {
 		}
 	}
 }
-
-
 
 /*
 func getKnownBuckets() []string {
@@ -156,7 +154,6 @@ func (p *storeCB) remove(prefix string) {
 		}
 	}
 
-
 	p.Unlock()
 }
 
@@ -197,7 +194,7 @@ func (p *storeCB) insert(prefix string, key, etag []string) {
 			panic("not sorted!")
 		}
 	}
-	
+
 	p.Unlock()
 }
 

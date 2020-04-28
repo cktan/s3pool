@@ -138,6 +138,8 @@ func serve(c *tcp_server.Client, request string) {
 		reply, err = op.RemoveKey(cmdargs)
 	case "_LISTPREFIX":
 		reply, err = op.ListPrefix(cmdargs)
+	case "_LISTDROP":
+		reply, err = op.ListDrop(cmdargs)
 	default:
 		err = errors.New("Bad command: " + cmd)
 	}
@@ -150,6 +152,8 @@ type progArgs struct {
 	daemonPrep      *bool
 	pidFile         *string
 	pullConcurrency *int
+	master          *string
+	standby         *string
 }
 
 func parseArgs() (p progArgs, err error) {
@@ -159,6 +163,8 @@ func parseArgs() (p progArgs, err error) {
 	p.daemonPrep = flag.Bool("daemonprep", false, "internal, do not use")
 	p.pidFile = flag.String("pidfile", "", "store pid in this path")
 	p.pullConcurrency = flag.Int("c", 20, "maximum concurrent pull from s3")
+	p.master = flag.String("L", "localhost", "hostname of master s3 lister")
+	p.standby = flag.String("l", "", "hostname of standby s3 lister")
 
 	flag.Parse()
 
@@ -223,8 +229,9 @@ func main() {
 
 	// save some conf
 	conf.PullConcurrency = *p.pullConcurrency
-	//conf.Master = *p.master
-	//conf.Standby = *p.standby
+	conf.Master = *p.master
+	conf.Standby = *p.standby
+	conf.Port = *p.port
 
 	// setup log file
 	mon.SetLogPrefix("log/s3pool")

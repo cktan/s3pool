@@ -20,16 +20,8 @@ import (
 	"strings"
 )
 
-type ListRecord struct {
-	Key  string
-	Etag string
-}
-
-type ListCollection struct {
-	Contents []ListRecord
-}
-
-func ListObjects(bucket string, prefix string, notify func(key, etag string)) error {
+/* no longer called */
+func __ListObjects(bucket string, prefix string, notify func(key, etag string)) error {
 	var err error
 
 	// invoke s3api to list objects

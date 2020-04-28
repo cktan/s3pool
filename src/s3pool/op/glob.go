@@ -16,7 +16,7 @@ import (
 	"errors"
 	"github.com/cktan/glob"
 	"s3pool/conf"
-	"s3pool/s3meta"
+	"s3pool/mop"
 	"strings"
 )
 
@@ -49,7 +49,7 @@ func Glob(args []string) (string, error) {
 
 	// get list of potential matches
 	prefix := globPrefix(pattern)
-	key, err := s3meta.List(bucket, prefix)
+	key, err := mop.ListPrefix(bucket, prefix)
 
 	// filter the matches; return only those that matched
 	var replyBuilder strings.Builder

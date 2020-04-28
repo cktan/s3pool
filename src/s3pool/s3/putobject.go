@@ -19,7 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"s3pool/conf"
-	"s3pool/s3meta"
+	"s3pool/mop"
 	"s3pool/strlock"
 )
 
@@ -61,6 +61,6 @@ func PutObject(bucket, key, fname string) error {
 	}
 
 	// reflect the new file in our catalog
-	s3meta.Set(bucket, key, "new")
+	mop.SetETag(bucket, key, "new")
 	return nil
 }

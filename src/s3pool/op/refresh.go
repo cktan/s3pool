@@ -16,7 +16,7 @@ import (
 	"errors"
 	"log"
 	"s3pool/conf"
-	"s3pool/s3meta"
+	"s3pool/mop"
 )
 
 /*
@@ -33,6 +33,8 @@ func Refresh(args []string) (string, error) {
 	// DO NOT checkCatalog here. We will update it!
 
 	log.Println(" ... invalidate s3meta bucket", bucket)
-	s3meta.Drop(bucket)
+	if err := mop.ListDrop(bucket); err != nil {
+		return "", err
+	}
 	return "\n", nil
 }

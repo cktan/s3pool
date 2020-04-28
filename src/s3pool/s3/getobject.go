@@ -20,7 +20,7 @@ import (
 	"os"
 	"os/exec"
 	"s3pool/conf"
-	"s3pool/s3meta"
+	"s3pool/mop"
 	"s3pool/strlock"
 	"strings"
 )
@@ -49,7 +49,10 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 	// Get etag from meta file
 	metapath := path + "__meta__"
 	etag := extractETag(metapath)
-	catetag := s3meta.Get(bucket, key)
+	catetag, err := mop.GetETag(bucket, key)
+	if err != nil {
+		return
+	}
 
 	// check that destination path exists
 	if !fileReadable(path) {
@@ -110,14 +113,14 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 			log.Println("   ... catetag", catetag)
 			if etag != catetag && etag != "" {
 				log.Println(" ... update", key, etag)
-				s3meta.Set(bucket, key, etag)
+				mop.SetETag(bucket, key, etag)
 			}
 			retpath = path
 			return
 		}
 		noSuchKey := strings.Contains(errstr, "NoSuchKey")
 		if noSuchKey {
-			s3meta.Remove(bucket, key)
+			mop.RemoveKey(bucket, key)
 		}
 		err = fmt.Errorf("aws s3api get-object failed -- %s", errstr)
 		return
@@ -135,7 +138,7 @@ func GetObject(bucket string, key string, force bool) (retpath string, hit bool,
 	etag = extractETag(metapath)
 	if etag != "" {
 		//log.Println(" ... update", key, etag)
-		s3meta.Set(bucket, key, etag)
+		mop.SetETag(bucket, key, etag)
 	}
 
 	// Done!

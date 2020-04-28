@@ -27,14 +27,14 @@ func Status(_ []string) (string, error) {
 	fmt.Fprintf(&reply, "count_pull_hit %v\n", conf.CountPullHit)
 	fmt.Fprintf(&reply, "count_push %v\n", conf.CountPush)
 	fmt.Fprintf(&reply, "count_refresh %v\n", conf.CountRefresh)
-	fmt.Fprintf(&reply, "is_master %v\n", conf.IsMaster)
-	fmt.Fprintf(&reply, "master %v\n", conf.Master)
 	fmt.Fprintf(&reply, "pull_concurrency %v\n", conf.PullConcurrency)
 	fmt.Fprintf(&reply, "refresh_interval %v\n", conf.RefreshInterval)
 	fmt.Fprintf(&reply, "revision %v\n", conf.Revision)
-	fmt.Fprintf(&reply, "standby %v\n", conf.Standby)
 	fmt.Fprintf(&reply, "up_since %v\n", conf.UpSince)
 	fmt.Fprintf(&reply, "verbose %v\n", conf.VerboseLevel)
+	fmt.Fprintf(&reply, "master %v\n", conf.Master)
+	fmt.Fprintf(&reply, "standby %v\n", conf.Standby)
+	fmt.Fprintf(&reply, "port %d\n", conf.Port)
 
 	return reply.String(), nil
 }

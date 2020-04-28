@@ -14,10 +14,9 @@ package op
 
 import (
 	"errors"
-	"strings"
 	"s3pool/s3meta"
+	"strings"
 )
-
 
 func GetETag(args []string) (string, error) {
 	if len(args) != 2 {
@@ -49,24 +48,31 @@ func RemoveKey(args []string) (string, error) {
 }
 
 func ListPrefix(args []string) (string, error) {
-	if len(args) != 1 && len(args) != 2 {
-		return "", errors.New("Expected 1 or 2 arguments for _LISTPREFIX")
+	if len(args) != 2 {
+		return "", errors.New("Expected 2 arguments for _LISTPREFIX")
 	}
-	bucket := args[0]
-	prefix := ""
-	if len(args) == 2 {
-		prefix = args[1]
-	}
+	bucket, prefix := args[0], args[1]
+
 	key, err := s3meta.List(bucket, prefix)
 	if err != nil {
 		return "", err
 	}
-	
+
 	var reply strings.Builder
-	for _, k := range(key) {
+	for _, k := range key {
 		reply.WriteString(k)
 		reply.WriteString("\n")
 	}
 
 	return reply.String(), nil
+}
+
+func ListDrop(args []string) (string, error) {
+	if len(args) != 1 {
+		return "", errors.New("Expected 1 argument for _LISTDROP")
+	}
+
+	bucket := args[0]
+	s3meta.Drop(bucket)
+	return "", nil
 }
