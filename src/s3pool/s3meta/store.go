@@ -70,11 +70,16 @@ func bisectLeft(arr []string, x string) int {
 }
 
 func (p *storeCB) setETag(key string, etag string) {
+	p.Lock()
 	p.etag[key] = etag
+	p.Unlock()
 }
 
 func (p *storeCB) getETag(key string) string {
-	return p.etag[key]
+	p.RLock();
+	x := p.etag[key]
+	p.RUnlock();
+	return x
 }
 
 func (p *storeCB) remove(prefix string) {
