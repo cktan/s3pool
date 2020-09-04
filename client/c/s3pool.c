@@ -267,8 +267,10 @@ char* s3pool_pull(int port, const char* bucket, const char* key,
 				  char* errmsg, int errmsgsz)
 {
 	char* reply = s3pool_pull_ex(port, bucket, &key, 1, errmsg, errmsgsz);
-	char* term = strchr(reply, '\n');
-	if (term) *term = 0;
+	if (reply) {
+		char* term = strchr(reply, '\n');
+		if (term) *term = 0;
+	}
 	return reply;
 }
 
