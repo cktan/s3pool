@@ -31,7 +31,7 @@ their respective buckets
 ## Object Files
 
 S3 Objects of a bucket are stored in its BUCKETDIR, using the slash
-character as path separators. Two consequtive slashes in a key name is
+character as path separators. Two consecutive slashes in a key name are
 not handled.
 
 ## Meta Files
